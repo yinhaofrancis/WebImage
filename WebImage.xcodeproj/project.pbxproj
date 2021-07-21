@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A9A0355F26A87F1300CC5F02 /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A0355E26A87F1300CC5F02 /* Network.swift */; };
+		A9A0356126A8803700CC5F02 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A0356026A8803700CC5F02 /* Model.swift */; };
 		A9B2EECE26A3B31200B64A95 /* WebImageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B2EECD26A3B31200B64A95 /* WebImageTests.swift */; };
 		A9B2EED626A4138000B64A95 /* Downloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B2EED526A4138000B64A95 /* Downloader.swift */; };
 		A9B2EEDA26A4438600B64A95 /* Map.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B2EED926A4438600B64A95 /* Map.swift */; };
@@ -53,6 +55,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A9A0355E26A87F1300CC5F02 /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
+		A9A0356026A8803700CC5F02 /* Model.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
 		A9B2EECB26A3B31200B64A95 /* WebImageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WebImageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A9B2EECD26A3B31200B64A95 /* WebImageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebImageTests.swift; sourceTree = "<group>"; };
 		A9B2EECF26A3B31200B64A95 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -135,6 +139,8 @@
 				A9D4772226A32E4C00264339 /* Assets.xcassets */,
 				A9D4772426A32E4C00264339 /* LaunchScreen.storyboard */,
 				A9D4772726A32E4C00264339 /* Info.plist */,
+				A9A0355E26A87F1300CC5F02 /* Network.swift */,
+				A9A0356026A8803700CC5F02 /* Model.swift */,
 			);
 			path = WebImage;
 			sourceTree = "<group>";
@@ -303,6 +309,8 @@
 			files = (
 				A9D4771E26A32E4900264339 /* ViewController.swift in Sources */,
 				A9D4771A26A32E4900264339 /* AppDelegate.swift in Sources */,
+				A9A0355F26A87F1300CC5F02 /* Network.swift in Sources */,
+				A9A0356126A8803700CC5F02 /* Model.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -7,17 +7,57 @@
 
 import UIKit
 import WebImageCache
-class ViewController: UIViewController {
+import CommonCrypto
 
-    @IBOutlet weak var image: UIImageView!
+
+public class Max:WebService<String,Body>{
+    func req(page:Int,group:DispatchGroup)->Max{
+        group.enter()
+        self.get(url: "/csgo/content", param: "category=1&page=\(page)") { e in
+            group.leave()
+        }
+        return self
+    }
+}
+
+class Cell:UITableViewCell{
+    @IBOutlet weak var imgView:UIImageView!
+}
+
+class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        self.content.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as! Cell
+        cell.imgView.load(url: URL(string: self.content[indexPath.row].image!)!)
+    
+        return cell
+    }
+    
+
+    let group:DispatchGroup = DispatchGroup()
+    
+    @IBOutlet weak var table:UITableView!
+    var content:[Content] = []
     override func viewDidLoad() {
         super.viewDidLoad()
-//        self.image.load(url: URL(string: "https://upload-images.jianshu.io/upload_images/2920524-8997016b01ca6552.jpg")!)
         
-        self.image.load(url: URL(string: "http://littlesvr.ca/apng/images/GenevaDrive.webp")!)
-        // Do any additional setup after loading the view.
+        let a = (1..<10).map { i in
+            Max().req(page: i, group: group)
+        }
+        self.group.notify(queue: .main) {
+            let a = a.map { m in
+                m.response?.data?.content
+            }.flatMap{$0}.flatMap{$0}
+            self.content = a
+            self.table.reloadData()
+        }
     }
-
+    override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
+        CacheFile.clean()
+    }
 
 }
 

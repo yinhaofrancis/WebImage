@@ -9,46 +9,69 @@ import UIKit
 
 extension UIImageView{
     public func load(url:URL,size:CGSize? = nil,defaultImg:UIImage? = nil){
-        self.image = defaultImg
         if let u = self.url{
             Downloader.shared.noUseUrl(url: u)
         }
         self.url = url
-        if let ob = self.observer{
-            Downloader.shared.center.removeObserver(ob)
-        }
-        do{
-            let ob = try Downloader.shared.download(url: url,callback: { f in
-                f.readData { d in
-                    let a = ImageProcess()
-                    a.update(data: d, final: true)
-                    let image = a.image
-                    RunLoop.main.perform(inModes: [.default]) {
-                        self.image = image
-                        
-                    }
-                }
-            })
-            self.observer = ob
-        }catch{
-            
+        self.image = defaultImg
+        if self.observer == nil{
+            self.observerDownload()
+            self.observer = "OK"
         }
         
+        guard let f = try? Downloader.shared.fileName(url: url) else { return }
+        self.name = f
+        Downloader.shared.download(url: url)
+        
+    }
+    private struct space{
+        static var name:String = ""
+        static var ob:String = ""
+        static var url:String = ""
+    }
+    public var name:String?{
+        get{
+            objc_getAssociatedObject(self, &space.name) as? String
+        }
+        set{
+            objc_setAssociatedObject(self, &space.name, newValue, .OBJC_ASSOCIATION_COPY)
+        }
     }
     public var url:URL?{
         get{
-            objc_getAssociatedObject(self, "url") as? URL
+            objc_getAssociatedObject(self, &space.url) as? URL
         }
         set{
-            objc_setAssociatedObject(self, "url", newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, &space.url, newValue, .OBJC_ASSOCIATION_COPY)
         }
     }
     private var observer:Any?{
         get{
-            objc_getAssociatedObject(self, "observer")
+            objc_getAssociatedObject(self, &space.ob)
         }
         set{
-            objc_setAssociatedObject(self, "observer", newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, &space.ob, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+    private func observerDownload(){
+        Downloader.shared.addObserver(ob: self, sel: #selector(handle(no:)))
+    }
+    @objc public func handle(no:Notification){
+        let f = no.object as! CacheFile
+        if f.name != self.name{
+            return
+        }
+        f.readData { [weak f] d in
+            guard let file = f else { return }
+            
+            let a = ImageProcess()
+            
+            a.update(data: d, final: file.fileInfo.total <= d.count)
+            let image = a.image
+            RunLoop.main.perform(inModes: [.common]) {
+                self.image = image
+                
+            }
         }
     }
 }

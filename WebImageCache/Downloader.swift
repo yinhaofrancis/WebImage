@@ -40,9 +40,8 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
                 return
             }
             file.writeData(data: data)
-            DispatchQueue.main.async {
-                self.post(file: file)
-            }
+            self.post(file: file)
+            
         }catch{
             
         }
@@ -50,7 +49,8 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         
     }
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didBecome downloadTask: URLSessionDownloadTask) {
-        
+        guard let u = downloadTask.originalRequest?.url else { return }
+        self.tasks[u] = downloadTask
     }
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         guard let originUrl = dataTask.originalRequest?.url else {
@@ -58,9 +58,7 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         }
         guard let file = self.files[originUrl] else { return }
         file.writeData(data: data)
-        DispatchQueue.main.async {
-            self.post(file: file)
-        }
+        self.post(file: file)
         
     }
     public func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
@@ -100,6 +98,18 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         }
     }
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        guard let u  = task.originalRequest?.url else { return }
+        if let err = error as NSError?{
+            if err.code == NSURLErrorTimedOut{
+                self.head(url: u)
+            }
+        }else{
+            if (error != nil){
+                self.files[u]?.delete()
+                self.files[u] = nil
+            }
+            
+        }
     }
     
     
@@ -117,17 +127,19 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         self.session = URLSession(configuration: configuration, delegate: self, delegateQueue: self.operationQueue)
     }
     
-    public func download(url:URL,callback:@escaping (CacheFile)->Void) throws->Any? {
+    public func download(url:URL) {
+        
         if self.files[url] == nil{
-            let name = try Downloader.sha256(str: url.absoluteString)
-            self.files[url] = CacheFile(name: name)
+            do{
+                let name = try fileName(url: url)
+                self.files[url] = CacheFile(name: name)
+            }catch{
+                return
+            }
+            
         }
         guard let file = self.files[url] else {
-            throw NSError(domain: "create file fail", code: 0, userInfo: nil)
-        }
-        let ob = self.center.addObserver(forName: .dataUpdate, object: file, queue: self.operationQueue) { i in
-            guard let file = i.object as? CacheFile else { return }
-            callback(file)
+            return
         }
         var info = file.fileInfo
         info.loadType = .file
@@ -137,16 +149,17 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         } else if file.fileInfo.length < file.fileInfo.total{
             self.get(url: url)
         }else{
-            self.post(file: file)
+            self.operationQueue.addOperation {
+                self.post(file: file)
+            }
         }
-        return ob
+    }
+    public func fileName(url:URL) throws ->String{
+        return try Downloader.md5(str: url.absoluteString)
     }
     public func noUseUrl(url:URL){
-        guard let file = self.files[url] else { return }
-        file.releaseMemory()
-        DispatchQueue.main.async {
-            self.discard(file: file)
-        }
+        self.tasks[url]?.cancel()
+        self.tasks[url] = nil
     }
     func configFile(file:CacheFile,resp:HTTPURLResponse) {
         var f = file.fileInfo
@@ -175,22 +188,28 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         if(file.fileInfo.acceptRange){
             req.addValue("bytes=\(file.fileInfo.length)-", forHTTPHeaderField: "Range")
         }
-        self.session?.dataTask(with: req).resume()
+        let task = self.session?.dataTask(with: req)
+        self.tasks[url] = task
+        task?.resume()
     }
     func head(url:URL){
         var req = URLRequest(url: url)
         req.httpMethod = "head"
-        self.session?.dataTask(with: req).resume()
+
+        let task = self.session?.dataTask(with: req)
+        self.tasks[url] = task
+        task?.resume()
     }
     
     public private(set) var files:Map<URL,CacheFile> = Map()
+    public private(set) var tasks:Map<URL,URLSessionTask> = Map()
     public typealias CC = (_ data: UnsafeRawPointer, _ len: CC_LONG, _ md: UnsafeMutablePointer<UInt8>) -> UnsafeMutablePointer<UInt8>
-    public static func sha256(str:String) throws ->String{
+    public static func md5(str:String) throws ->String{
         guard let data = str.data(using: .utf8) else {throw NSError(domain: "str fail", code: 0, userInfo: nil)}
         let call:CC = {
-            CC_SHA256($0, $1, $2)
+            CC_MD5($0, $1, $2)
         }
-        return Hash(data: data, digest: Int(CC_SHA256_DIGEST_LENGTH), cFunc: call).hex
+        return Hash(data: data, digest: Int(CC_MD5_DIGEST_LENGTH), cFunc: call).hex
     }
     public static func Hash(data:Data,digest:Int,cFunc:CC)->Data{
         let p:UnsafeMutablePointer<UInt8> = UnsafeMutablePointer.allocate(capacity: data.count)
@@ -203,10 +222,10 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         return rdata
     }
     public func post(file:CacheFile){
-        self.notificationQueue.enqueue(Notification(name: .dataUpdate, object: file, userInfo: nil), postingStyle: .whenIdle, coalesceMask: .onSender, forModes: [.default])
+        self.center.post(name: .dataUpdate, object: file)
     }
-    public func discard(file:CacheFile){
-        self.notificationQueue.dequeueNotifications(matching: Notification(name: .dataUpdate, object: file, userInfo: nil), coalesceMask:Int(NotificationQueue.NotificationCoalescing.onSender.rawValue))
+    public func addObserver(ob:Any,sel:Selector){
+        self.center.addObserver(ob, selector: sel, name: .dataUpdate, object: nil)
     }
     public static var shared:Downloader = Downloader(configuration: .default)
 }

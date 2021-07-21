@@ -31,4 +31,9 @@ public class Map<K:Hashable,V>{
         pthread_rwlock_destroy(self.rw)
         self.rw.deallocate()
     }
+    public func clean(){
+        pthread_rwlock_wrlock(self.rw)
+        self.dic.removeAll()
+        pthread_rwlock_unlock(self.rw)
+    }
 }

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-
+import CommonCrypto
 public enum LoadType:Int{
     case data
     case file
@@ -17,11 +17,13 @@ public struct FileInfo{
     public var length:UInt64
     public var loadType:LoadType
     public var acceptRange:Bool
+    public var checkMd5:Bool
     public init() {
         total = 0
         length = 0
         loadType = .data
         acceptRange = false
+        checkMd5 = false
     }
 }
 
@@ -32,19 +34,16 @@ public class CacheFile{
     public var data:Data?
     public init(name:String){
         self.name = name
+        self.fileUrl = CacheFile.createFileUrl(name: self.name)
         pthread_rwlock_init(self.rw, nil)
-        CacheFile.checkFileDictionary()
-        if !fileExist{
-            FileManager.default.createFile(atPath: self.fileUrl.path,
-                                           contents: nil, attributes: nil)
-            self.writeFileInfo(info: self.fileInfo)
-        }
+        self.checkFile()
         self.fileInfo = self.readFileInfo()
     }
     public private(set) var fileInfo:FileInfo = FileInfo()
     func readFileInfo()->FileInfo{
         do {
             pthread_rwlock_rdlock(self.rw)
+            self.checkFile()
             let file = try FileHandle(forReadingFrom: self.fileUrl)
             defer{
                 try! file.close()
@@ -71,6 +70,7 @@ public class CacheFile{
     func writeFileInfo(info:FileInfo){
         
         pthread_rwlock_wrlock(self.rw)
+        self.checkFile()
         self.fileInfo = info
         let file = try! FileHandle(forWritingTo: self.fileUrl)
         defer{
@@ -92,9 +92,7 @@ public class CacheFile{
         FileManager.default.fileExists(atPath: self.fileUrl.path)
     }
     
-    public var fileUrl:URL{
-        return CacheFile.createFileUrl(name: self.name)
-    }
+    public let fileUrl:URL
     class func createFileUrl(name:String)->URL{
         return CacheFile.cacheDir.appendingPathComponent(name)
     }
@@ -107,6 +105,14 @@ public class CacheFile{
             try! FileManager.default.createDirectory(at: self.cacheDir, withIntermediateDirectories: true, attributes: nil)
         }
     }
+    func checkFile(){
+        if !fileExist{
+            self.fileInfo = FileInfo()
+            FileManager.default.createFile(atPath: self.fileUrl.path,
+                                           contents: nil, attributes: nil)
+            self.writeFileInfo(info: self.fileInfo)
+        }
+    }
     static public var cacheDir:URL{
         let name = Bundle.main.bundleIdentifier ?? "main" + ".CacheFile"
         return try! FileManager.default.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent(name)
@@ -115,6 +121,7 @@ public class CacheFile{
         CacheFile.queue.async {
             do{
                 pthread_rwlock_rdlock(self.rw)
+                self.checkFile()
                 let file = try FileHandle(forReadingFrom: self.fileUrl)
                 defer{
                     try! file.close()
@@ -141,6 +148,7 @@ public class CacheFile{
             
             do{
                 pthread_rwlock_wrlock(self.rw)
+                self.checkFile()
                 let file = try FileHandle(forWritingTo: self.fileUrl)
                 defer{
                     try? file.close()
@@ -165,6 +173,9 @@ public class CacheFile{
         }
     }
     public func writeData(data:Data){
+        if self.data == nil{
+            self.data = Data()
+        }
         self.data?.append(data)
         self.write { f in
             f.write(data)
@@ -184,13 +195,24 @@ public class CacheFile{
             if #available(iOS 13.4, *) {
                 self.data = (try? f.readToEnd()) ?? Data()
                 CacheFile.queue.async {
-                    dataCall(self.data!)
+                    guard let cd = self.data else {return}
+                    dataCall(cd)
                 }
             } else {
                 self.data = f.readDataToEndOfFile()
                 CacheFile.queue.async {
-                    dataCall(self.data!)
+                    guard let cd = self.data else {return}
+                    dataCall(cd)
                 }
+            }
+        }
+    }
+    public func delete(){
+        self.write { f in
+            if #available(iOS 13.0, *) {
+                try? f.truncate(atOffset: 0)
+            } else {
+                f.truncateFile(atOffset: 0)
             }
         }
     }
@@ -202,4 +224,9 @@ public class CacheFile{
         self.rw.deallocate()
     }
     public static var queue = DispatchQueue(label: "Francis.CacheFile", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
+    public static func clean(){
+        try? FileManager.default.removeItem(at: cacheDir)
+        try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true, attributes: nil)
+        Downloader.shared.files.clean()
+    }
 }
