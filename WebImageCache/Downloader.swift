@@ -130,7 +130,7 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
             callback(file)
         }
         var info = file.fileInfo
-        info.loadType = .data
+        info.loadType = .file
         file.writeFileInfo(info: info)
         if file.fileInfo.total == 0{
             self.head(url: url)
@@ -190,7 +190,7 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         let call:CC = {
             CC_SHA256($0, $1, $2)
         }
-        return Hash(data: data, digest: Int(CC_SHA256_DIGEST_LENGTH), cFunc: call).base64EncodedString()
+        return Hash(data: data, digest: Int(CC_SHA256_DIGEST_LENGTH), cFunc: call).hex
     }
     public static func Hash(data:Data,digest:Int,cFunc:CC)->Data{
         let p:UnsafeMutablePointer<UInt8> = UnsafeMutablePointer.allocate(capacity: data.count)
@@ -209,4 +209,11 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         self.notificationQueue.dequeueNotifications(matching: Notification(name: .dataUpdate, object: file, userInfo: nil), coalesceMask:Int(NotificationQueue.NotificationCoalescing.onSender.rawValue))
     }
     public static var shared:Downloader = Downloader(configuration: .default)
+}
+extension Data{
+    public var hex:String{
+        self.reduce(into: "") { r, i in
+            r += String(format: "%02x", i)
+        }
+    }
 }
