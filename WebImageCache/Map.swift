@@ -56,4 +56,13 @@ public class List<K:Hashable>{
             pthread_rwlock_unlock(self.rw)
         }
     }
+    deinit {
+        pthread_rwlock_destroy(self.rw)
+        self.rw.deallocate()
+    }
+    public func clean(){
+        pthread_rwlock_wrlock(self.rw)
+        self.array.removeAll()
+        pthread_rwlock_unlock(self.rw)
+    }
 }
