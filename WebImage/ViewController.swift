@@ -55,7 +55,7 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
             self.group.notify(queue: .main) {
                 let a = a.map { m in
                     m.response?.data?.content
-                }.flatMap{$0}.flatMap{$0}
+                }.compactMap{$0}.flatMap{$0}
                 self.content = a
                 self.table.reloadData()
             }
