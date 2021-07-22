@@ -37,3 +37,50 @@ public class Map<K:Hashable,V>{
         pthread_rwlock_unlock(self.rw)
     }
 }
+public class List<K:Hashable>{
+    private var array = Array<K>()
+    private var rw:UnsafeMutablePointer<pthread_rwlock_t> = .allocate(capacity: 1)
+    public init(){
+        pthread_rwlock_init(self.rw, nil)
+    }
+    public subscript(key:Int)->K?{
+        pthread_rwlock_rdlock(self.rw)
+        let n = array
+        pthread_rwlock_unlock(self.rw)
+        if key >= n.count{
+            return nil
+        }
+        return n[key]
+    }
+    public func append(element:K){
+        pthread_rwlock_wrlock(self.rw)
+        self.array.append(element)
+        pthread_rwlock_unlock(self.rw)
+    }
+    public func remove(element:K){
+        pthread_rwlock_wrlock(self.rw)
+        self.array.removeAll { e in
+            e == element
+        }
+        pthread_rwlock_unlock(self.rw)
+    }
+    public func removeFirst(){
+        pthread_rwlock_wrlock(self.rw)
+        self.array.removeFirst()
+        pthread_rwlock_unlock(self.rw)
+    }
+    public func removeLast(){
+        pthread_rwlock_wrlock(self.rw)
+        self.array.removeLast()
+        pthread_rwlock_unlock(self.rw)
+    }
+    deinit {
+        pthread_rwlock_destroy(self.rw)
+        self.rw.deallocate()
+    }
+    public func clean(){
+        pthread_rwlock_wrlock(self.rw)
+        self.array.removeAll()
+        pthread_rwlock_unlock(self.rw)
+    }
+}
