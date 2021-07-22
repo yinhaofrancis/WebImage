@@ -37,32 +37,3 @@ public class Map<K:Hashable,V>{
         pthread_rwlock_unlock(self.rw)
     }
 }
-public class List<K:Hashable>{
-    var array = Array<K>()
-    private var rw:UnsafeMutablePointer<pthread_rwlock_t> = .allocate(capacity: 1)
-    public init(){
-        pthread_rwlock_init(self.rw, nil)
-    }
-    public subscript(key:Int)->K{
-        get{
-            pthread_rwlock_rdlock(self.rw)
-            let n = array
-            pthread_rwlock_unlock(self.rw)
-            return n[key]
-        }
-        set{
-            pthread_rwlock_wrlock(self.rw)
-            self.array[key] = newValue
-            pthread_rwlock_unlock(self.rw)
-        }
-    }
-    deinit {
-        pthread_rwlock_destroy(self.rw)
-        self.rw.deallocate()
-    }
-    public func clean(){
-        pthread_rwlock_wrlock(self.rw)
-        self.array.removeAll()
-        pthread_rwlock_unlock(self.rw)
-    }
-}
