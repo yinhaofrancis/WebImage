@@ -159,6 +159,13 @@ public class Database{
             }
             sqlite3_result_null(sc)
         }
+        public func ret(error:String,code:Int32){
+            guard let sc = ctx else {
+                return
+            }
+            sqlite3_result_error(sc, error, Int32(error.utf8.count))
+            sqlite3_result_error_code(sc, code)
+        }
 //        public func h
     }
     public class ResultSet{
