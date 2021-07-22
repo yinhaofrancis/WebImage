@@ -10,6 +10,7 @@ import CommonCrypto
 
 extension Notification.Name{
     public static var dataUpdate:Notification.Name = .init("Downloader.dataUpdate")
+    public static var downloaderReset:Notification.Name = .init("Downloader.Reset")
 }
 
 public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelegate{
@@ -101,7 +102,6 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         guard let u  = task.originalRequest?.url else { return }
         if let err = error as NSError?{
             if err.code == NSURLErrorTimedOut{
-                self.head(url: u)
             }
         }else{
             if (error != nil){
@@ -110,6 +110,12 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
             }
             
         }
+        self.session?.getAllTasks(completionHandler: { i in
+            let c = i.filter { t in
+                t.state == .running
+            }.count
+            print("task num \(c)")
+        })
     }
     
     
@@ -147,7 +153,15 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         if file.fileInfo.total == 0{
             self.head(url: url)
         } else if file.fileInfo.length < file.fileInfo.total{
-            self.get(url: url)
+            if let task = self.tasks[url]{
+                if task.state == .suspended{
+                    task.resume()
+                }else{
+                    self.get(url: url)
+                }
+            }else{
+                self.get(url: url)
+            }
         }else{
             self.operationQueue.addOperation {
                 self.post(file: file)
@@ -158,8 +172,7 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         return try Downloader.md5(str: url.absoluteString)
     }
     public func noUseUrl(url:URL){
-        self.tasks[url]?.cancel()
-        self.tasks[url] = nil
+        self.tasks[url]?.suspend()
     }
     func configFile(file:CacheFile,resp:HTTPURLResponse) {
         var f = file.fileInfo
@@ -228,6 +241,16 @@ public class Downloader:NSObject,URLSessionDataDelegate,URLSessionDownloadDelega
         self.center.addObserver(ob, selector: sel, name: .dataUpdate, object: nil)
     }
     public static var shared:Downloader = Downloader(configuration: .default)
+    
+    public static func clean(){
+        Downloader.shared.files.clean()
+        Downloader.shared.tasks.clean()
+        Downloader.shared.resetSession(configuration: .default)
+    }
+    public func resetSession(configuration:URLSessionConfiguration){
+        Downloader.shared.session?.finishTasksAndInvalidate()
+        self.session = URLSession(configuration: configuration, delegate: self, delegateQueue: self.operationQueue)
+    }
 }
 extension Data{
     public var hex:String{

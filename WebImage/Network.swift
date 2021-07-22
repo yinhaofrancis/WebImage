@@ -116,7 +116,6 @@ open class WebService<U:Codable,D:Codable>{
             if http.statusCode >= 200 && http.statusCode < 300{
                 if let d = data{
                     do {
-                        print(String(data: d, encoding: .utf8) as Any)
                         self.response = try self.jsonDecoder.decode(D.self, from: d)
                         callback?(.success)
                     } catch  {

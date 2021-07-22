@@ -17,13 +17,11 @@ public struct FileInfo{
     public var length:UInt64
     public var loadType:LoadType
     public var acceptRange:Bool
-    public var checkMd5:Bool
     public init() {
         total = 0
         length = 0
         loadType = .data
         acceptRange = false
-        checkMd5 = false
     }
 }
 
@@ -227,6 +225,34 @@ public class CacheFile{
     public static func clean(){
         try? FileManager.default.removeItem(at: cacheDir)
         try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true, attributes: nil)
-        Downloader.shared.files.clean()
+        Downloader.clean()
+    }
+}
+@propertyWrapper
+public struct JSONFile<T:Codable>{
+    let encoder:JSONEncoder = JSONEncoder()
+    let decoder:JSONDecoder = JSONDecoder()
+    public let name:String
+    public var wrappedValue:T? = nil{
+        didSet{
+            guard let obj = self.wrappedValue else {
+                try? Data().write(to: self.url)
+                return
+            }
+            try? self.encoder.encode(obj).write(to: self.url)
+        }
+    }
+    public init(name:String) {
+        self.name = name
+        do {
+            let data = try Data(contentsOf: self.url)
+            self.wrappedValue = try self.decoder.decode(T.self, from: data)
+        } catch {
+            print(error)
+        }
+        
+    }
+    public var url:URL{
+        try! FileManager.default.url(for: .cachesDirectory, in: .allDomainsMask, appropriateFor: nil, create: true).appendingPathComponent(self.name)
     }
 }
