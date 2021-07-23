@@ -8,45 +8,7 @@
 import Foundation
 import SQLite3
 
-public struct Sql{
-    public static func select(keys:String...)->Select{
-        return Select(keys: keys)
-    }
-    public static func select()->Select{
-        return Select(keys: [])
-    }
-}
 
-public struct Select{
-    var keys:[String] = []
-    public init(keys:[String]) {
-        self.keys = keys
-    }
-    public func from(tables:String...)->SqlExpress{
-        SqlExpress(event: "select", keys: self.keys, tables: tables)
-    }
-}
-
-public protocol Express{
-    var sqlCode:String { get }
-    
-}
-
-public struct SqlExpress:Express{
-    public var sqlCode: String{
-        return "\(event) \(keys.joined(separator: ",")) from \(self.tables.joined(separator: ",")) \(condition?.conditionCode != nil ? "where \(condition!.conditionCode)" : "")"
-    }
-    public let event:String
-    public let keys:[String]
-    public let tables:[String]
-    public var condition:Condition?
-    public func `where`(_ condition:Condition)->SqlExpress{
-        var sq = self
-        sq.condition = condition
-        return sq
-    }
-
-}
 public class Condition{
     var relate:String
     var left:ConditionKey

@@ -164,8 +164,52 @@ class WebImageTests: XCTestCase {
     }
     public func testCondition() throws{
         let c = (ConditionKey(key: "a") > ConditionKey(key: "b")) || (ConditionKey(key: "c") < ConditionKey(key: "d"))
-        print(Sql.select(keys: "a","b").from(tables: "fdd").where(c).sqlCode)
+        print(c.conditionCode)
+    }
+    public func testCreate() throws{
+        let model = DatabaseModel(pool: self.data)
+        model.create(type: n.self)
+        model.create(type: m.self)
+        RunLoop.current.run()
     }
 }
 
+struct n:SQLCode {
+    static var tableName: String{
+        return "n"
+    }
+    
+    var name: String = ""
+    
+    var ds: Int = 0
+    
+    var oo: Int  = 0
+    
+    static var table: TableBody{
+    
+        ColumnKey(name:"name",type: .text, map: \m.name)
+        ColumnKey(name: "ds", type: .integer, map: \m.ds,primary: true)
+        ColumnKey(name: "oo", type: .integer, map: \m.oo,primary: true)
+    }
+
+}
+struct m:SQLCode {
+    static var tableName: String{
+        return "m"
+    }
+    
+    var name: String = ""
+    
+    var ds: Int = 0
+    
+    var oo: Int  = 0
+    
+    static var table: TableBody{
+    
+        ColumnKey(name:"name",type: .text, map: \m.name)
+        ColumnKey(name: "ds", type: .integer, map: \m.ds,primary: true).foreignKey(remoteTable: m.self, remoteKey: "ds", onDelete: .CASCADE, onUpdate: .CASCADE)
+        ColumnKey(name: "oo", type: .integer, map: \m.oo,primary: true).foreignKey(remoteTable: n.self, remoteKey: "oo")
+    }
+
+}
 
