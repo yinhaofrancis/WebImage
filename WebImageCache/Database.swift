@@ -63,7 +63,8 @@ public class Database{
         self.functions.append(function)
         sqlite3_create_function(self.sqlite!, function.name, function.nArg, SQLITE_UTF8, Unmanaged.passUnretained(function).toOpaque(), { ctx, i, ret in
             let call = Unmanaged<ScalarFunction>.fromOpaque(sqlite3_user_data(ctx)).takeUnretainedValue()
-            call.call(call,i,ret)
+            call.ctx = ctx
+            call.call(call,i,ret?.pointee)
         }, nil, nil)
     }
     static public func checkCacheDir() throws->URL{
@@ -87,8 +88,8 @@ public class Database{
         public let name:String
         public let nArg:Int32
         public var ctx:OpaquePointer?
-        public let call:(ScalarFunction,Int32,UnsafeMutablePointer<OpaquePointer?>?)->Void
-        public init(name:String,nArg:Int32,handle:@escaping (ScalarFunction,Int32,UnsafeMutablePointer<OpaquePointer?>?)->Void) {
+        public let call:(ScalarFunction,Int32,OpaquePointer?)->Void
+        public init(name:String,nArg:Int32,handle:@escaping (ScalarFunction,Int32,OpaquePointer?)->Void) {
             self.name = name
             self.nArg = nArg
             self.call = handle
@@ -166,7 +167,28 @@ public class Database{
             sqlite3_result_error(sc, error, Int32(error.utf8.count))
             sqlite3_result_error_code(sc, code)
         }
-//        public func h
+        public func value(value:OpaquePointer?)->Int{
+            if MemoryLayout<Int>.size == 4{
+                return Int(sqlite3_value_int(value))
+            }else{
+                return Int(sqlite3_value_int64(value))
+            }
+        }
+        public func value(value:OpaquePointer)->Int32{
+            return sqlite3_value_int(value)
+        }
+        public func value(value:OpaquePointer)->Int64{
+            return sqlite3_value_int64(value)
+        }
+        public func value(value:OpaquePointer)->Double{
+            return sqlite3_value_double(value)
+        }
+        public func value(value:OpaquePointer)->Float{
+            return Float(sqlite3_value_double(value))
+        }
+        public func value(value:OpaquePointer)->String{
+            return String(cString: sqlite3_value_text(value))
+        }
     }
     public class ResultSet{
         

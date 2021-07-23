@@ -59,17 +59,19 @@ class WebImageTests: XCTestCase {
     func testTransactions() throws{
         let sql2 = """
         BEGIN;
-                        CREATE TABLE IF NOT EXISTS emp_master
+        DROP TABLE emp_master;
+        
+        CREATE TABLE IF NOT EXISTS emp_master
 
-                        (emp_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        (emp_id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-                        first_name TEXT,
+        first_name TEXT,
 
-                        last_name TEXT,
+        last_name TEXT,
 
-                        salary NUMERIC,
+        salary NUMERIC,
 
-                        dept_id INTEGER);
+        dept_id INTEGER);
 
         INSERT INTO emp_master
 
@@ -101,7 +103,6 @@ class WebImageTests: XCTestCase {
 //        DELETE FROM emp_master WHERE emp_id=1;
 //        try self.data?.query(sql: sql2).finish()
         self.data?.close()
-        print(data?.url)
     }
     func testFunc() throws {
         let sql2 = """
@@ -109,12 +110,12 @@ class WebImageTests: XCTestCase {
         """
         self.data = try Database(group: DispatchGroup(), queue: .main, name: "a")
         let f = Database.ScalarFunction(name: "A", nArg: 1) {ctx, i, a in
-            sqlite3_result_int(ctx, sqlite3_value_int(a?.pointee) + 1)
+            ctx.ret(v: ctx.value(value: a) + 1)
             
         }
         self.data?.addScalarFunction(function: f)
 //        self.data?.addScalarFunction(function: Function)
-        var result = try self.data?.exec(sql: sql2)
+        try self.data?.exec(sql: sql2)
         self.data?.close()
     }
 
