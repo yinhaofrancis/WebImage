@@ -66,6 +66,5 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
         CacheFile.clean()
         self.table.reloadData()
     }
-
 }
 

@@ -11,7 +11,7 @@ import SQLite3
 class WebImageTests: XCTestCase {
     
 
-    var data:Database?
+    var data:DataPool = try! DataPool(name: "a")
     override func setUpWithError() throws {
         
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -23,43 +23,49 @@ class WebImageTests: XCTestCase {
     }
 
     func testCreateDropTable() throws {
-        self.data = try Database(group: DispatchGroup(), queue: .main, name: "a")
-        try self.data?.exec(sql: "CREATE TABLE m (Field1    INTEGER NOT NULL UNIQUE,Field2    INTEGER,PRIMARY KEY(Field1,Field2))")
+        let a = XCTestExpectation(description: "time out")
         
-        try self.data?.exec(sql: "DROP table m")
-        self.data?.close()
+        self.data.write { db in
+            try db.exec(sql: "CREATE TABLE m (Field1    INTEGER NOT NULL UNIQUE,Field2    INTEGER,PRIMARY KEY(Field1,Field2))")
+            
+            try db.exec(sql: "DROP table m")
+            a.fulfill()
+        }
+        self.wait(for: [a], timeout: 10)
     }
     func testSimpleInsert() throws {
+        let a = XCTestExpectation(description: "time out")
         
-        self.data = try Database(group: DispatchGroup(), queue: .main, name: "a")
-        try self.data?.exec(sql: "CREATE TABLE IF NOT EXISTS A (Field1    INTEGER,Field2    TEXT,Field3    REAL,Field4    NUMERIC,Field5    BLOB)")
-        let result = try self.data?.query(sql: "INSERT INTO A  VALUES (?,?,?,?,?)")
-        result?.bind(index: 1).bind(value: 1)
-        result?.bind(index: 2).bind(value: "ds撒打算😗👨‍👨‍👧‍👦ds")
-        result?.bind(index: 3).bind(value: 3.14)
-        result?.bind(index: 4).bind(value: 1.414)
-        result?.bind(index: 5).bind(value: "dsdsd".data(using: .utf8)!)
-        result?.finish()
-        self.data?.close()
-    }
-    func testQuery() throws{
-        self.data = try Database(group: DispatchGroup(), queue: .main, name: "a")
-        let result = try self.data!.query(sql: "SELECT * from A where Field1=:name")
-        result.bind(name: ":name")?.bind(value: 1)
-        while try result.step() {
-            print(result.column(index: 0, type: Int.self).value())
-            print(result.column(index: 1, type: String.self).value())
-            print(result.column(index: 2, type: Float.self).value())
-            print(result.column(index: 3, type: Float.self).value())
-            print(result.column(index: 4, type: String.self).value())
+        self.data.write { db in
+            try db.exec(sql: "CREATE TABLE IF NOT EXISTS A (Field1    INTEGER,Field2    TEXT,Field3    REAL,Field4    NUMERIC,Field5    BLOB)")
+            let result = try db.query(sql: "INSERT INTO A  VALUES (?,?,?,?,?)")
+            result.bind(index: 1).bind(value: 1)
+            result.bind(index: 2).bind(value: "ds撒打算😗👨‍👨‍👧‍👦ds")
+            result.bind(index: 3).bind(value: 3.14)
+            result.bind(index: 4).bind(value: 1.414)
+            result.bind(index: 5).bind(value: "dsdsd".data(using: .utf8)!)
+            result.finish()
         }
-        result.close()
-        self.data?.close()
+        self.data.read { db in
+            let result = try db.query(sql: "SELECT * from A where Field1=:name")
+            result.bind(name: ":name")?.bind(value: 1)
+            while try result.step() {
+                print(result.column(index: 0, type: Int.self).value())
+                print(result.column(index: 1, type: String.self).value())
+                print(result.column(index: 2, type: Float.self).value())
+                print(result.column(index: 3, type: Float.self).value())
+                print(result.column(index: 4, type: String.self).value())
+            }
+            result.close()
+            a.fulfill()
+        }
+        self.wait(for: [a], timeout: 10)
     }
+
     func testTransactions() throws{
         let sql2 = """
         BEGIN;
-        DROP TABLE emp_master;
+        DROP TABLE IF EXISTS emp_master;
         
         CREATE TABLE IF NOT EXISTS emp_master
 
@@ -97,34 +103,69 @@ class WebImageTests: XCTestCase {
 
         COMMIT;
         """
-        self.data = try Database(group: DispatchGroup(), queue: .main, name: "a")
-//        try self.data!.query(sql: sql).finish(
-        try self.data?.exec(sql: sql2)
-//        DELETE FROM emp_master WHERE emp_id=1;
-//        try self.data?.query(sql: sql2).finish()
-        self.data?.close()
-    }
-    func testFunc() throws {
-        let sql2 = """
-        select emp_id,A(emp_id) from emp_master;
-        """
-        self.data = try Database(group: DispatchGroup(), queue: .main, name: "a")
+        let a = XCTestExpectation(description: "time out")
+        
+        self.data.write { db in
+            try db.exec(sql: sql2)
+        }
         let f = Database.ScalarFunction(name: "A", nArg: 1) {ctx, i, a in
-            ctx.ret(v: ctx.value(value: a) + 1)
+            ctx.ret(v: ctx.value(value: a!) + 1)
+            ctx.valueNoChange(value: a!)
+        }
+    
+        
+        self.data.read { db in
+            db.addScalarFunction(function: f)
+            let sql2 = """
+            select emp_id,A(emp_id) from emp_master;
+            """
+            try db.exec(sql: sql2)
+            a.fulfill()
             
         }
-        self.data?.addScalarFunction(function: f)
-//        self.data?.addScalarFunction(function: Function)
-        try self.data?.exec(sql: sql2)
-        self.data?.close()
+        self.wait(for: [a], timeout: 10)
     }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        measure {
-            // Put the code you want to measure the time of here.
+    public func testTable() throws{
+        let a = XCTestExpectation(description: "time out")
+        self.data.read { db in
+            try db.exec(sql: "select * from sqlite_master where type='table';")
+            a.fulfill()
         }
+        self.wait(for: [a], timeout: 10)
     }
+    public func testSql() throws{
+        let sql = """
+            PRAGMA foreign_keys = ON;
+             CREATE TABLE klb_log (
+                          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                          log_comment varchar(512)
+                        );
 
+                        CREATE TABLE klb_log_food_maps (
+                          uid integer,
+                          did integer,
+                          PRIMARY KEY (uid,did),
+                          FOREIGN KEY (uid) references klb_log(id) ON DELETE CASCADE,
+                          FOREIGN KEY (did) references klb_food(id) ON DELETE CASCADE
+                        );
+
+                        CREATE TABLE klb_food (
+                          id integer,
+                          description varchar(255),
+                          PRIMARY KEY (id)
+                        );
+            """
+        let a = XCTestExpectation(description: "time out")
+        self.data.write { db in
+            try db.exec(sql: sql)
+            a.fulfill()
+        }
+        self.wait(for: [a], timeout: 10)
+    }
+    public func testCondition() throws{
+        let c = (ConditionKey(key: "a") > ConditionKey(key: "b")) || (ConditionKey(key: "c") < ConditionKey(key: "d"))
+        print(Sql.select(keys: "a","b").from(tables: "fdd").where(c).sqlCode)
+    }
 }
-        
+
+

@@ -64,15 +64,19 @@ public class List<K:Hashable>{
         }
         pthread_rwlock_unlock(self.rw)
     }
-    public func removeFirst(){
+    @discardableResult
+    public func removeFirst()->K?{
         pthread_rwlock_wrlock(self.rw)
-        self.array.removeFirst()
+        let a = self.array.count > 0 ? self.array.removeFirst() : nil
         pthread_rwlock_unlock(self.rw)
+        return a
     }
-    public func removeLast(){
+    @discardableResult
+    public func removeLast()->K?{
         pthread_rwlock_wrlock(self.rw)
-        self.array.removeLast()
+        let a = self.array.count > 0 ?  self.array.removeLast() : nil
         pthread_rwlock_unlock(self.rw)
+        return a
     }
     deinit {
         pthread_rwlock_destroy(self.rw)
@@ -82,5 +86,11 @@ public class List<K:Hashable>{
         pthread_rwlock_wrlock(self.rw)
         self.array.removeAll()
         pthread_rwlock_unlock(self.rw)
+    }
+    public var count:Int{
+        pthread_rwlock_wrlock(self.rw)
+        let c = self.array.count
+        pthread_rwlock_unlock(self.rw)
+        return c
     }
 }

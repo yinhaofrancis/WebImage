@@ -8,18 +8,21 @@
 import Foundation
 import SQLite3
 
-public class Database{
-    public let group:DispatchGroup
-    public let queue:DispatchQueue
+public class Database:Hashable{
+    public static func == (lhs: Database, rhs: Database) -> Bool {
+        lhs.hashValue == rhs.hashValue
+    }
+    private var uuid = UUID().uuidString
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(uuid)
+    }
     public let url:URL
     public var sqlite:OpaquePointer?
     public var functions:Array<ScalarFunction> = Array()
-    public init(group:DispatchGroup,queue:DispatchQueue,name:String) throws{
-        self.group = group
-        self.queue = queue
-        let url = try Database.checkCacheDir().appendingPathComponent(name)
+    public init(url:URL,readOnly:Bool = false) throws{
         self.url = url
-        sqlite3_open_v2(url.path, &self.sqlite, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nil)
+        let r = readOnly ? SQLITE_OPEN_READONLY : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE)
+        sqlite3_open_v2(url.path, &self.sqlite, r , nil)
         if(self.sqlite == nil){
             throw NSError(domain: "create sqlite3 fail", code: 0, userInfo: nil)
         }
@@ -67,16 +70,11 @@ public class Database{
             call.call(call,i,ret?.pointee)
         }, nil, nil)
     }
-    static public func checkCacheDir() throws->URL{
-        let name = Bundle.main.bundleIdentifier ?? "main" + ".Database"
-        let url = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent(name)
-        var b:ObjCBool = false
-        let a = FileManager.default.fileExists(atPath: url.path, isDirectory: &b)
-        if !(b.boolValue && a){
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
-        }
-        
-        return url
+    public func rollback(){
+        sqlite3_rollback_hook(sqlite, nil, nil)
+    }
+    public func commit(){
+        sqlite3_commit_hook(self.sqlite, nil, nil)
     }
     public func close(){
         sqlite3_close(self.sqlite)
@@ -167,12 +165,16 @@ public class Database{
             sqlite3_result_error(sc, error, Int32(error.utf8.count))
             sqlite3_result_error_code(sc, code)
         }
-        public func value(value:OpaquePointer?)->Int{
+        public func value(value:OpaquePointer)->Int{
             if MemoryLayout<Int>.size == 4{
                 return Int(sqlite3_value_int(value))
             }else{
                 return Int(sqlite3_value_int64(value))
             }
+        }
+        @available(iOS 12.0, *)
+        public func valueNoChange(value:OpaquePointer){
+            sqlite3_value_nochange(value)
         }
         public func value(value:OpaquePointer)->Int32{
             return sqlite3_value_int(value)
@@ -374,5 +376,75 @@ public class Database{
             }
         }
     }
+}
+public class DataPool{
+    static public func checkDir() throws->URL{
+        let name = Bundle.main.bundleIdentifier ?? "main" + ".Database"
+        let url = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent(name)
+        var b:ObjCBool = false
+        let a = FileManager.default.fileExists(atPath: url.path, isDirectory: &b)
+        if !(b.boolValue && a){
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+        }
+        return url
+    }
+    private let queue:DispatchQueue = DispatchQueue(label: "database", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
     
+    public private(set) var url:URL
+    private var read:List<Database> = List()
+    private var wdb:Database
+    private var semphone = DispatchSemaphore(value: 3)
+    public init(name:String) throws {
+        let url = try DataPool.checkDir().appendingPathComponent(name)
+        self.wdb = try Database(url: url)
+        self.url = url
+    }
+    public func openForeignKeys(){
+        self.write { db in
+            try db.exec(sql: "PRAGMA foreign_keys = ON")
+        }
+    }
+    public func read(callback:@escaping (Database) throws->Void){
+        self.queue.async {
+            do {
+                self.semphone.wait()
+                defer{
+                    
+                    self.semphone.signal()
+                }
+                
+                let db = try self.createReadOnly()
+                try callback(db)
+                self.read.append(element: db)
+            }catch{
+                print(error)
+            }
+
+        }
+    }
+    private func createReadOnly() throws ->Database{
+        if let db = self.read.removeFirst(){
+            return db
+        }
+        let db = try Database(url: self.url, readOnly: true)
+        return db
+    }
+    public func write(callback:@escaping (Database) throws ->Void){
+        self.queue.async(execute: DispatchWorkItem(flags: .barrier, block: {
+            let db = self.wdb
+            do {
+                try callback(db)
+                db.commit()
+            }catch{
+                print(error)
+                db.rollback()
+            }
+        }))
+    }
+    deinit {
+        self.wdb.close()
+        for i in 0 ..< self.read.count {
+            self.read[i]?.close()
+        }
+    }
 }
