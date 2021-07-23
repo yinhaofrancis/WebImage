@@ -163,7 +163,7 @@ class WebImageTests: XCTestCase {
         self.wait(for: [a], timeout: 10)
     }
     public func testCondition() throws{
-        let c = (ConditionKey(key: "a") > ConditionKey(key: "b")) || (ConditionKey(key: "c") < ConditionKey(key: "d"))
+        let c = (ConditionKey(key: "a") > ConditionKey(key: "b")) || (ConditionKey(key: "c") < ConditionKey(key: "d") && Condition.like(lk: ConditionKey(key: "ff"), rk: "xxx%")) && Condition.isNull(lk: ConditionKey(key: "p"))
         print(c.conditionCode)
     }
     public func testCreate() throws{
