@@ -10,6 +10,7 @@
 		A930594726A92F0C001DA696 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = A930594626A92F0C001DA696 /* Database.swift */; };
 		A98A31C026AA8EE600B51FE5 /* Table.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98A31BF26AA8EE600B51FE5 /* Table.swift */; };
 		A98A31C226AABAC300B51FE5 /* Sql.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98A31C126AABAC300B51FE5 /* Sql.swift */; };
+		A9944F8F26AC424600E898FE /* Mirror.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9944F8E26AC424600E898FE /* Mirror.swift */; };
 		A9A0355F26A87F1300CC5F02 /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A0355E26A87F1300CC5F02 /* Network.swift */; };
 		A9A0356126A8803700CC5F02 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A0356026A8803700CC5F02 /* Model.swift */; };
 		A9B2EECE26A3B31200B64A95 /* WebImageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B2EECD26A3B31200B64A95 /* WebImageTests.swift */; };
@@ -61,6 +62,7 @@
 		A930594626A92F0C001DA696 /* Database.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
 		A98A31BF26AA8EE600B51FE5 /* Table.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Table.swift; sourceTree = "<group>"; };
 		A98A31C126AABAC300B51FE5 /* Sql.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sql.swift; sourceTree = "<group>"; };
+		A9944F8E26AC424600E898FE /* Mirror.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mirror.swift; sourceTree = "<group>"; };
 		A9A0355E26A87F1300CC5F02 /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
 		A9A0356026A8803700CC5F02 /* Model.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
 		A9B2EECB26A3B31200B64A95 /* WebImageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WebImageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -161,6 +163,7 @@
 				A9B2EEDB26A5F50F00B64A95 /* ImageView.swift */,
 				A930594626A92F0C001DA696 /* Database.swift */,
 				A98A31BF26AA8EE600B51FE5 /* Table.swift */,
+				A9944F8E26AC424600E898FE /* Mirror.swift */,
 				A98A31C126AABAC300B51FE5 /* Sql.swift */,
 			);
 			path = WebImageCache;
@@ -329,6 +332,7 @@
 			files = (
 				A98A31C026AA8EE600B51FE5 /* Table.swift in Sources */,
 				A9B2EEDC26A5F50F00B64A95 /* ImageView.swift in Sources */,
+				A9944F8F26AC424600E898FE /* Mirror.swift in Sources */,
 				A9B2EED626A4138000B64A95 /* Downloader.swift in Sources */,
 				A9B2EEDA26A4438600B64A95 /* Map.swift in Sources */,
 				A98A31C226AABAC300B51FE5 /* Sql.swift in Sources */,

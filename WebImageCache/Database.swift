@@ -388,7 +388,7 @@ public class DataPool{
         }
         return url
     }
-    private let queue:DispatchQueue = DispatchQueue(label: "database", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
+    public let queue:DispatchQueue = DispatchQueue(label: "database", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
     
     public private(set) var url:URL
     private var read:List<Database> = List()
@@ -419,8 +419,36 @@ public class DataPool{
             }catch{
                 print(error)
             }
-
         }
+    }
+    public func readSync(callback:@escaping (Database) throws->Void){
+        self.queue.sync {
+            do {
+                self.semphone.wait()
+                defer{
+                    
+                    self.semphone.signal()
+                }
+                
+                let db = try self.createReadOnly()
+                try callback(db)
+                self.read.append(element: db)
+            }catch{
+                print(error)
+            }
+        }
+    }
+    public func writeSync(callback:@escaping (Database) throws ->Void){
+        self.queue.sync(execute: DispatchWorkItem(flags: .barrier, block: {
+            let db = self.wdb
+            do {
+                try callback(db)
+                db.commit()
+            }catch{
+                print(error)
+                db.rollback()
+            }
+        }))
     }
     private func createReadOnly() throws ->Database{
         if let db = self.read.removeFirst(){

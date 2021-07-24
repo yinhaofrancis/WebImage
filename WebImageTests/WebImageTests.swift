@@ -26,9 +26,9 @@ class WebImageTests: XCTestCase {
         let a = XCTestExpectation(description: "time out")
         
         self.data.write { db in
-            try db.exec(sql: "CREATE TABLE m (Field1    INTEGER NOT NULL UNIQUE,Field2    INTEGER,PRIMARY KEY(Field1,Field2))")
-            
-            try db.exec(sql: "DROP table m")
+            try db.exec(sql: "CREATE TABLE qqq (Field1    INTEGER NOT NULL UNIQUE,Field2    INTEGER,PRIMARY KEY(Field1,Field2))")
+            try db.exec(sql: "PRAGMA table_info(qqq)")
+            try db.exec(sql: "DROP table qqq")
             a.fulfill()
         }
         self.wait(for: [a], timeout: 10)
@@ -167,49 +167,81 @@ class WebImageTests: XCTestCase {
         print(c.conditionCode)
     }
     public func testCreate() throws{
+        let a = XCTestExpectation(description: "time out")
         let model = DatabaseModel(pool: self.data)
-        model.create(type: n.self)
-        model.create(type: m.self)
-        RunLoop.current.run()
+   
+        model.create(obj: Person())
+        model.create(obj: Order())
+        
+        model.pool.queue.async {
+            a.fulfill()
+        }
+        
+        self.wait(for: [a], timeout: 10)
     }
+
+    
 }
 
 struct n:SQLCode {
+    static var explictKey: Bool{
+        return false
+    }
+    
     static var tableName: String{
         return "n"
     }
     
     var name: String = ""
     
-    var ds: Int = 0
-    
-    var oo: Int  = 0
-    
-    static var table: TableBody{
-    
-        ColumnKey(name:"name",type: .text, map: \m.name)
-        ColumnKey(name: "ds", type: .integer, map: \m.ds,primary: true)
-        ColumnKey(name: "oo", type: .integer, map: \m.oo,primary: true)
-    }
+    var ds: Int = 1
+    var d:Data?
+    var ms:String?
+    var double:Double = 3.40
+    var dddddd:Double?
+    var oo: Int  = 4
 
 }
-struct m:SQLCode {
+struct Person:SQLCode {
+    static var explictKey: Bool{
+        return true
+    }
+    
     static var tableName: String{
-        return "m"
+        return "Person"
     }
     
-    var name: String = ""
     
-    var ds: Int = 0
+    @Key("p_id")
+    @PrimaryKey
+    var pId: Int = 0
     
-    var oo: Int  = 0
-    
-    static var table: TableBody{
-    
-        ColumnKey(name:"name",type: .text, map: \m.name)
-        ColumnKey(name: "ds", type: .integer, map: \m.ds,primary: true).foreignKey(remoteTable: m.self, remoteKey: "ds", onDelete: .CASCADE, onUpdate: .CASCADE)
-        ColumnKey(name: "oo", type: .integer, map: \m.oo,primary: true).foreignKey(remoteTable: n.self, remoteKey: "oo")
-    }
-
+    @Key("p_name")
+    var pName: String  = ""
 }
 
+struct Order:SQLCode{
+    static var explictKey: Bool{
+        true
+    }
+    
+    static var tableName: String{
+        return "Order"
+    }
+    
+    @ForeignKey(remoteTable: "Person", remoteKey: "p_id")
+    @Key("p_id")
+    var pId:Int = 0
+
+    @Key("o_name")
+    var oName:String = ""
+    
+    
+    @Key("o_id")
+    @PrimaryKey
+    var oId:Int = 0
+    
+//    @Default(wrappedValue: 0, "0")
+//    var kk:Int?
+
+}
