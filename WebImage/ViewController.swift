@@ -60,7 +60,6 @@ class ViewController: UIViewController,UITableViewDelegate,UITableViewDataSource
                 self.table.reloadData()
             }
         }
-        NSNotification.Name("d")
     }
     override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
         CacheFile.clean()

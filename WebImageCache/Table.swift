@@ -37,7 +37,38 @@ public class DatabaseModel{
         return state
     }
     public func update<T:SQLCode>(model:T){
-        
+        self.pool.write { db in
+            try model.doUpdate(db: db)
+        }
+    }
+    public func update<T:SQLCode>(model:[String:SqlType],table:T.Type,condition:Condition,bind:[String:SqlType]){
+        self.pool.write { db in
+            let kv = model.map { i in
+                T.updateSetKeyCode((i.key,i.value))
+            }.joined(separator: ",")
+            let c = "UPDATE \(T.tableName) SET \(kv) where \(condition.conditionCode)"
+            let rs = try db.query(sql: c)
+            for i in model{
+                if i.value is Data{
+                    rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
+                }else if i.value is String{
+                    rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
+                }
+            }
+            for i in bind{
+                if i.value is Data{
+                    rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
+                }else if i.value is String{
+                    rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
+                }
+            }
+            try rs.step()
+        }
+    }
+    public func insert<T:SQLCode>(model:T){
+        self.pool.write { db in
+            try model.doInsert(db: db)
+        }
     }
 }
 

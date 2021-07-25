@@ -170,9 +170,9 @@ class WebImageTests: XCTestCase {
         let a = XCTestExpectation(description: "time out")
         let model = DatabaseModel(pool: self.data)
    
-        model.create(obj: Person())
-        model.create(obj: Order())
-        
+//        model.create(obj: Person())
+//        model.create(obj: Order())
+        model.create(obj: n())
         model.pool.queue.async {
             a.fulfill()
         }
@@ -180,7 +180,62 @@ class WebImageTests: XCTestCase {
         self.wait(for: [a], timeout: 10)
     }
 
-    
+    public func testInsert() throws{
+        let a = XCTestExpectation(description: "time out")
+        let model = DatabaseModel(pool: self.data)
+        var nn = n()
+        nn.name =
+            """
+Dadad
+ada
+
+asds
+"""
+        nn.ds = 123
+        nn.d = "abc".data(using: .utf8)
+        nn.ms = "cccc"
+        model.insert(model: nn)
+        model.pool.read { db in
+            try db.exec(sql: "select * from n")
+            a.fulfill()
+        }
+        self.wait(for: [a], timeout: 10)
+    }
+    public func testUpdate() throws{
+        let a = XCTestExpectation(description: "time out")
+        let model = DatabaseModel(pool: self.data)
+        var nn = n()
+        nn.name =
+            """
+Dadad
+ada
+
+asds
+"""
+        nn.ds = 123
+        nn.d = "abc".data(using: .utf8)
+        nn.ms = "updates"
+        model.update(model: nn)
+        model.pool.read { db in
+            try db.exec(sql: "select * from n")
+            a.fulfill()
+        }
+        self.wait(for: [a], timeout: 10)
+    }
+    public func testUpdateCondition() throws{
+        let a = XCTestExpectation(description: "time out")
+        let model = DatabaseModel(pool: self.data)
+  
+//        model.update(model: nn, condition: ConditionKey(key: "ms") == "updates" && "ds" == ConditionKey("123"))
+        model.update(model: ["name":"testUpdateCondition"],
+                     table: n.self, condition: ConditionKey(key: "ms") == "@u" && ConditionKey(key: "_ds") == ConditionKey(key: "123"),
+                     bind: ["u":"updates"])
+        model.pool.read { db in
+            try db.exec(sql: "select * from n")
+            a.fulfill()
+        }
+        self.wait(for: [a], timeout: 10)
+    }
 }
 
 struct n:SQLCode {
@@ -194,12 +249,10 @@ struct n:SQLCode {
     
     var name: String = ""
     
+    @PrimaryKey
     var ds: Int = 1
     var d:Data?
     var ms:String?
-    var double:Double = 3.40
-    var dddddd:Double?
-    var oo: Int  = 4
 
 }
 struct Person:SQLCode {

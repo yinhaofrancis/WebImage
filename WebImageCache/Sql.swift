@@ -67,9 +67,9 @@ public class Condition{
     }
     public var conditionCode:String{
         if let n = self.next , let o = n.nextOp{
-            return "\(left.key)\(self.relate)\(right.key) \(o) \(n.conditionCode)"
+            return "\(left.key)\(self.relate)\(right.key) \(o) \(n.conditionCode)".replacingOccurrences(of: "\\", with: "")
         }else{
-            return "\(left.key)\(self.relate)\(right.key)"
+            return "\(left.key)\(self.relate)\(right.key)".replacingOccurrences(of: "\\", with: "")
         }
     }
 }
@@ -86,7 +86,7 @@ public struct ConditionKey:ExpressibleByStringLiteral {
         self.key = key
     }    
     public init(stringLiteral string:String) {
-        self.key = "'\(string)'"
+        self.key = "\(string)"
     }
     public static func == (lk:ConditionKey,rk:ConditionKey)->Condition{
         Condition(l: lk, relate: " = ", r: rk)
