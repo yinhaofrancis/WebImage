@@ -11,7 +11,7 @@ import SQLite3
 class WebImageTests: XCTestCase {
     
 
-    var data:DataPool = try! DataPool(name: "a")
+    var data:DataBasePool = try! DataBasePool(name: "a")
     override func setUpWithError() throws {
         
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -230,11 +230,23 @@ asds
         model.update(model: ["name":"testUpdateCondition"],
                      table: n.self, condition: ConditionKey(key: "ms") == "@u" && ConditionKey(key: "_ds") == ConditionKey(key: "123"),
                      bind: ["u":"updates"])
+        
+        
+        model.update(model: ["name":"testUpdate"],
+                     table: n.self, condition: ConditionKey(key: "ms") == "@u" && ConditionKey(key: "_ds") == ConditionKey(key: "123"),
+                     bind: ["u":"updates"])
         model.pool.read { db in
             try db.exec(sql: "select * from n")
             a.fulfill()
         }
-        self.wait(for: [a], timeout: 10)
+        self.wait(for: [a], timeout: 100)
+    }
+    public func testBack(){
+        let a = XCTestExpectation(description: "time out")
+//        self.data.queue.async {
+//            a.fulfill()
+//        }
+        self.wait(for: [a], timeout: 100)
     }
 }
 

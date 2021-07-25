@@ -17,8 +17,8 @@ public protocol SQLCode {
 
 
 public class DatabaseModel{
-    var pool:DataPool
-    public init(pool:DataPool){
+    var pool:DataBasePool
+    public init(pool:DataBasePool){
         self.pool = pool
     }
     public func create<T:SQLCode>(obj:T){

@@ -21,7 +21,7 @@ public class Database:Hashable{
     public var functions:Array<ScalarFunction> = Array()
     public init(url:URL,readOnly:Bool = false) throws{
         self.url = url
-        let r = readOnly ? SQLITE_OPEN_READONLY : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE)
+        let r = readOnly ? SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX  : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX)
         sqlite3_open_v2(url.path, &self.sqlite, r , nil)
         if(self.sqlite == nil){
             throw NSError(domain: "create sqlite3 fail", code: 0, userInfo: nil)
@@ -29,14 +29,14 @@ public class Database:Hashable{
     }
     public func exec(sql:String) throws {
         var error:UnsafeMutablePointer<CChar>?
-//        sqlite3_exec(self.sqlite, sql, nil, nil, &error)
-
         sqlite3_exec(self.sqlite, sql, { arg, len, v,col in
+            var str:String = ""
             for i in 0 ..< len{
                 let vstr = v?[Int(i)] == nil ? "NULL" : String(cString: v![Int(i)]!)
                 let cStr = col?[Int(i)] == nil ? "NULL" : String(cString: col![Int(i)]!)
-                print("\(cStr):\(vstr)")
+                str.append("\(cStr):\(vstr) \t")
             }
+            print(str)
             return 0
         }, nil, &error)
         if let e = error{
@@ -78,6 +78,9 @@ public class Database:Hashable{
     }
     public func close(){
         sqlite3_close(self.sqlite)
+    }
+    public static func errormsg(pointer:OpaquePointer?)->String{
+        String(cString: sqlite3_errmsg(pointer))
     }
     deinit {
         sqlite3_close(self.sqlite)
@@ -377,9 +380,19 @@ public class Database:Hashable{
         }
     }
 }
-public class DataPool{
+public class DataBasePool{
     static public func checkDir() throws->URL{
         let name = Bundle.main.bundleIdentifier ?? "main" + ".Database"
+        let url = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent(name)
+        var b:ObjCBool = false
+        let a = FileManager.default.fileExists(atPath: url.path, isDirectory: &b)
+        if !(b.boolValue && a){
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
+        }
+        return url
+    }
+    static public func checkBackUpDir() throws->URL{
+        let name = (Bundle.main.bundleIdentifier ?? "main" + ".Database") + ".back"
         let url = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent(name)
         var b:ObjCBool = false
         let a = FileManager.default.fileExists(atPath: url.path, isDirectory: &b)
@@ -394,10 +407,24 @@ public class DataPool{
     private var read:List<Database> = List()
     private var wdb:Database
     private var semphone = DispatchSemaphore(value: 3)
+    private var dbName:String
+    private var thread:Thread?
+    private var timer:Timer?
     public init(name:String) throws {
-        let url = try DataPool.checkDir().appendingPathComponent(name)
+        let url = try DataBasePool.checkDir().appendingPathComponent(name)
+        self.dbName = name
+        if(!FileManager.default.fileExists(atPath: url.path)){
+            FileManager.default.createFile(atPath: url.path, contents: nil, attributes: nil)
+        }
         self.wdb = try Database(url: url)
         self.url = url
+        self.thread = Thread(block: {
+            self.backup()
+            self.timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true, block: { t in
+                self.backup()
+            })
+            RunLoop.current.run()
+        })
     }
     public func openForeignKeys(){
         self.write { db in
@@ -414,6 +441,9 @@ public class DataPool{
                 }
                 
                 let db = try self.createReadOnly()
+                defer{
+                    db.close()
+                }
                 try callback(db)
                 self.read.append(element: db)
             }catch{
@@ -431,6 +461,9 @@ public class DataPool{
                 }
                 
                 let db = try self.createReadOnly()
+                defer{
+                    db.close()
+                }
                 try callback(db)
                 self.read.append(element: db)
             }catch{
@@ -441,6 +474,9 @@ public class DataPool{
     public func writeSync(callback:@escaping (Database) throws ->Void){
         self.queue.sync(execute: DispatchWorkItem(flags: .barrier, block: {
             let db = self.wdb
+            defer{
+                db.close()
+            }
             do {
                 try callback(db)
                 db.commit()
@@ -460,6 +496,9 @@ public class DataPool{
     public func write(callback:@escaping (Database) throws ->Void){
         self.queue.async(execute: DispatchWorkItem(flags: .barrier, block: {
             let db = self.wdb
+            defer{
+                db.close()
+            }
             do {
                 try callback(db)
                 db.commit()
@@ -469,10 +508,31 @@ public class DataPool{
             }
         }))
     }
+    public func backup(){
+        self.read { db in
+            let u = try DataBasePool.checkBackUpDir().appendingPathComponent(self.dbName)
+            try BackupDatabase(url: u, source: db).backup()
+        }
+    }
+    public static func restore(name:String) throws {
+        let u = try DataBasePool.checkBackUpDir().appendingPathComponent(name)
+        let ur = try DataBasePool.checkDir().appendingPathComponent(name)
+        DispatchQueue.global().async {
+            do{
+                let source = try Database(url: u, readOnly: true)
+                try BackupDatabase(url: ur, source: source).backup()
+            }catch{
+                print("restore fail")
+            }
+        }
+        
+    }
     deinit {
         self.wdb.close()
         for i in 0 ..< self.read.count {
             self.read[i]?.close()
         }
+        self.thread?.cancel()
+        self.timer?.invalidate()
     }
 }
