@@ -30,7 +30,6 @@ public class Database:Hashable{
     public func exec(sql:String) throws {
         var error:UnsafeMutablePointer<CChar>?
         sqlite3_exec(self.sqlite, sql, { arg, len, v,col in
-            var str:String = ""
             print("<<<<<<<<<<<<")
             for i in 0 ..< len{
                 let vstr = v?[Int(i)] == nil ? "NULL" : String(cString: v![Int(i)]!)
