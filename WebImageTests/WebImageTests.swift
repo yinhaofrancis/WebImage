@@ -225,8 +225,6 @@ asds
     public func testUpdateCondition() throws{
         let a = XCTestExpectation(description: "time out")
         let model = DatabaseModel(pool: self.data)
-  
-//        model.update(model: nn, condition: ConditionKey(key: "ms") == "updates" && "ds" == ConditionKey("123"))
         model.update(model: ["name":"testUpdateCondition"],
                      table: n.self, condition: ConditionKey(key: "ms") == "@u" && ConditionKey(key: "_ds") == ConditionKey(key: "123"),
                      bind: ["u":"updates"])
@@ -243,9 +241,12 @@ asds
     }
     public func testBack(){
         let a = XCTestExpectation(description: "time out")
-//        self.data.queue.async {
-//            a.fulfill()
-//        }
+        
+        self.wait(for: [a], timeout: 100)
+    }
+    public func testRestore(){
+        let a = XCTestExpectation(description: "time out")
+        
         self.wait(for: [a], timeout: 100)
     }
 }

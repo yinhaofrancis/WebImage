@@ -47,7 +47,7 @@ public class BackupDatabase{
         }
         repeat{
             print(self.remaining,self.pageCount)
-            let r = sqlite3_backup_step(self.pbackUp, 5)
+            let r = sqlite3_backup_step(self.pbackUp, 1)
             if r == SQLITE_OK || r == SQLITE_BUSY || r == SQLITE_LOCKED{
                 sqlite3_sleep(100)
             }else{

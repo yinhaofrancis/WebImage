@@ -31,12 +31,13 @@ public class Database:Hashable{
         var error:UnsafeMutablePointer<CChar>?
         sqlite3_exec(self.sqlite, sql, { arg, len, v,col in
             var str:String = ""
+            print("<<<<<<<<<<<<")
             for i in 0 ..< len{
                 let vstr = v?[Int(i)] == nil ? "NULL" : String(cString: v![Int(i)]!)
                 let cStr = col?[Int(i)] == nil ? "NULL" : String(cString: col![Int(i)]!)
-                str.append("\(cStr):\(vstr) \t")
+                print("\(cStr):\(vstr)")
             }
-            print(str)
+            print(">>>>>>>>>>>>>")
             return 0
         }, nil, &error)
         if let e = error{
@@ -425,6 +426,7 @@ public class DataBasePool{
             })
             RunLoop.current.run()
         })
+        self.thread?.start()
     }
     public func openForeignKeys(){
         self.write { db in
@@ -441,9 +443,6 @@ public class DataBasePool{
                 }
                 
                 let db = try self.createReadOnly()
-                defer{
-                    db.close()
-                }
                 try callback(db)
                 self.read.append(element: db)
             }catch{
@@ -461,9 +460,6 @@ public class DataBasePool{
                 }
                 
                 let db = try self.createReadOnly()
-                defer{
-                    db.close()
-                }
                 try callback(db)
                 self.read.append(element: db)
             }catch{
@@ -474,9 +470,6 @@ public class DataBasePool{
     public func writeSync(callback:@escaping (Database) throws ->Void){
         self.queue.sync(execute: DispatchWorkItem(flags: .barrier, block: {
             let db = self.wdb
-            defer{
-                db.close()
-            }
             do {
                 try callback(db)
                 db.commit()
@@ -496,9 +489,6 @@ public class DataBasePool{
     public func write(callback:@escaping (Database) throws ->Void){
         self.queue.async(execute: DispatchWorkItem(flags: .barrier, block: {
             let db = self.wdb
-            defer{
-                db.close()
-            }
             do {
                 try callback(db)
                 db.commit()
@@ -517,8 +507,9 @@ public class DataBasePool{
     public static func restore(name:String) throws {
         let u = try DataBasePool.checkBackUpDir().appendingPathComponent(name)
         let ur = try DataBasePool.checkDir().appendingPathComponent(name)
-        DispatchQueue.global().async {
+        DispatchQueue.global().sync {
             do{
+                try FileManager.default.removeItem(at: ur)
                 let source = try Database(url: u, readOnly: true)
                 try BackupDatabase(url: ur, source: source).backup()
             }catch{

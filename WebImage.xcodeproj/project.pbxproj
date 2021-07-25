@@ -12,6 +12,7 @@
 		A98A31C226AABAC300B51FE5 /* Sql.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98A31C126AABAC300B51FE5 /* Sql.swift */; };
 		A9944F8F26AC424600E898FE /* Mirror.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9944F8E26AC424600E898FE /* Mirror.swift */; };
 		A9944F9126AD590C00E898FE /* Backup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9944F9026AD590C00E898FE /* Backup.swift */; };
+		A9944FC626ADB0E100E898FE /* testRestore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9944FC526ADB0E100E898FE /* testRestore.swift */; };
 		A9A0355F26A87F1300CC5F02 /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A0355E26A87F1300CC5F02 /* Network.swift */; };
 		A9A0356126A8803700CC5F02 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A0356026A8803700CC5F02 /* Model.swift */; };
 		A9B2EECE26A3B31200B64A95 /* WebImageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B2EECD26A3B31200B64A95 /* WebImageTests.swift */; };
@@ -65,6 +66,7 @@
 		A98A31C126AABAC300B51FE5 /* Sql.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sql.swift; sourceTree = "<group>"; };
 		A9944F8E26AC424600E898FE /* Mirror.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mirror.swift; sourceTree = "<group>"; };
 		A9944F9026AD590C00E898FE /* Backup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Backup.swift; sourceTree = "<group>"; };
+		A9944FC526ADB0E100E898FE /* testRestore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = testRestore.swift; sourceTree = "<group>"; };
 		A9A0355E26A87F1300CC5F02 /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
 		A9A0356026A8803700CC5F02 /* Model.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
 		A9B2EECB26A3B31200B64A95 /* WebImageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WebImageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -116,6 +118,7 @@
 			children = (
 				A9B2EECD26A3B31200B64A95 /* WebImageTests.swift */,
 				A9B2EECF26A3B31200B64A95 /* Info.plist */,
+				A9944FC526ADB0E100E898FE /* testRestore.swift */,
 			);
 			path = WebImageTests;
 			sourceTree = "<group>";
@@ -314,6 +317,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A9944FC626ADB0E100E898FE /* testRestore.swift in Sources */,
 				A9B2EECE26A3B31200B64A95 /* WebImageTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

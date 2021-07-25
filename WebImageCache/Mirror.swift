@@ -431,7 +431,7 @@ public struct Default<T:SqlType>:SqlType{
     }
     
     public var sqlType: String{
-        wrappedValue.sqlType + "  DEFAULT \"\(self.defaultvalue)\""
+        wrappedValue.sqlType + "  DEFAULT `\(self.defaultvalue)`"
     }
     public var wrappedValue:T
     public var defaultvalue:String
@@ -559,7 +559,7 @@ extension SQLCode{
         let columnMap = self.columnMap
         
         var item = columnMap.map { i in
-            "\"\(i.value.keyName ?? i.label)\" \(i.value.sqlType)"
+            "`\(i.value.keyName ?? i.label)` \(i.value.sqlType)"
         }
         if item.count == 0{
             return ""
@@ -567,7 +567,7 @@ extension SQLCode{
         let fitem = columnMap.filter { i in
             i.value.remoteTable != nil && i.value.remoteKey != nil
         }.map { i -> String in
-            var code = "FOREIGN KEY(\"\(i.value.keyName ?? i.label)\") REFERENCES \"\(i.value.remoteTable!)\"(\"\(i.value.remoteKey!)\")"
+            var code = "FOREIGN KEY(`\(i.value.keyName ?? i.label)`) REFERENCES `\(i.value.remoteTable!)`(`\(i.value.remoteKey!)`)"
             if let action = i.value.onUpdate{
                 code += " ON UPDATE \(action.action) "
             }
@@ -580,7 +580,7 @@ extension SQLCode{
         let pkItem = columnMap.filter { i in
             i.value.primaryKey
         }.map { i in
-            "\"\(i.value.keyName ?? i.label)\""
+            "`\(i.value.keyName ?? i.label)`"
         }.compactMap({$0})
         if(pkItem.count > 0){
             let pk = "PRIMARY KEY(" + pkItem.joined(separator: ",") + ")"
@@ -591,7 +591,7 @@ extension SQLCode{
             item.append(contentsOf: fitem)
         }
 
-        return "CREATE TABLE \"\(Self.tableName)\" (" + item.joined(separator: ",") + ")"
+        return "CREATE TABLE IF NOT EXISTS  `\(Self.tableName)` (" + item.joined(separator: ",") + ")"
     }
     public var primaryKey:[(String,SqlType)]{
         self.columnMap.filter { i in
@@ -613,12 +613,15 @@ extension SQLCode{
         }
     }
     
-    var insert:String{
-        let key = self.normalKey.map({$0.1.keyName ?? $0.0}).joined(separator: ",")
-        let value = self.normalKey.map { i -> String in
+    var allValueKey:String{
+        return self.normalKey.map { i -> String in
             return Self.insertKeyCode(i)
         }.joined(separator: ",")
-        return "INSERT INTO \(Self.tableName) (\(key)) values(\(value))"
+    }
+    var insert:String{
+        let key = self.normalKey.map({$0.1.keyName ?? $0.0}).joined(separator: ",")
+        
+        return "INSERT INTO \(Self.tableName) (\(key)) values(\(self.allValueKey))"
     }
     var bindMap:[String:SqlType]{
         self.normalKey.filter { i in
@@ -655,11 +658,24 @@ extension SQLCode{
             return "UPDATE \(Self.tableName) SET \(value) where \(self.primaryCondition)"
         }
     }
+    
     func doUpdate(db:Database) throws{
         let result = try db.query(sql: self.update)
         self.doBind(resultSet: result)
         try result.step()
     }
+    var delete:String{
+        if self.primaryKey.count == 0{
+            return ""
+        }
+        return "DELETE FROM \(Self.tableName) where \(self.primaryCondition)"
+    }
+    func doDelete(db:Database) throws{
+        let result = try db.query(sql: self.delete)
+        self.doBind(resultSet: result)
+        try result.step()
+    }
+    
     public static func conditionCode(_ i: (String, SqlType)) -> String {
         let key = i.1.keyName ?? i.0
         if i.1.value is Data{
