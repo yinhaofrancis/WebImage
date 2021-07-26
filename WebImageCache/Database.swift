@@ -79,6 +79,11 @@ public class Database:Hashable{
     public func close(){
         sqlite3_close(self.sqlite)
     }
+    public func fetch<T:SQLCode>(request:FetchRequest<T>) throws->ResultSet{
+        let rs = try self.query(sql: request.sql)
+        request.doSelectBind(result: rs)
+        return rs
+    }
     public static func errormsg(pointer:OpaquePointer?)->String{
         String(cString: sqlite3_errmsg(pointer))
     }
@@ -247,6 +252,9 @@ public class Database:Hashable{
             self.close()
             return self
         }
+        public func columnName(index:Int)->String{
+            String(cString: sqlite3_column_name(self.stmt, Int32(index)))
+        }
         public func close(){
             sqlite3_finalize(self.stmt)
         }
@@ -254,7 +262,8 @@ public class Database:Hashable{
             Int(sqlite3_column_count(self.stmt))
         }
         public func index(paramName:String)->Int32{
-            sqlite3_bind_parameter_index(self.stmt, paramName)
+            let index = sqlite3_bind_parameter_index(self.stmt, paramName)
+            return index
         }
         public func bind<T>(index:Int32)->Bind<T>{
             Bind<T>.init(stmt: self.stmt, index: index)
@@ -268,8 +277,7 @@ public class Database:Hashable{
         }
         public func column<T>(index:Int32,type:T.Type)->Column<T>{
             Column.init(stmt: self.stmt, index: index)
-        }
-        
+        }        
         public var paramCount:Int32{
             sqlite3_bind_parameter_count(self.stmt)
         }
@@ -288,6 +296,9 @@ public class Database:Hashable{
             }
             public func bind(value:T) where T == Int64{
                 sqlite3_bind_int64(self.stmt, index, value)
+            }
+            public func bind(value:T) where T == Int8{
+                sqlite3_bind_int(self.stmt, index, Int32(value))
             }
             public func bind(value:T) where T == Double{
                 sqlite3_bind_double(self.stmt, index, value)
@@ -340,6 +351,9 @@ public class Database:Hashable{
             }
             public func value()->T where T == Float{
                 Float(sqlite3_column_double(self.stmt,index))
+            }
+            public func value()->T where T == Int8{
+                Int8(sqlite3_column_int(self.stmt,index))
             }
             public func value()->T where T == Int{
                 if MemoryLayout<T>.size == 4{
@@ -419,7 +433,6 @@ public class DataBasePool{
         self.wdb = try Database(url: url)
         self.url = url
         self.thread = Thread(block: {
-            self.backup()
             self.timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true, block: { t in
                 self.backup()
             })
@@ -515,7 +528,6 @@ public class DataBasePool{
                 print("restore fail")
             }
         }
-        
     }
     deinit {
         self.wdb.close()

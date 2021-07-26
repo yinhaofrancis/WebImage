@@ -25,9 +25,14 @@ public protocol SqlType{
     var onDelete:ForeignKeyAction? { get }
     var onUpdate:ForeignKeyAction? { get }
     var value:Any? { get }
+    var path:AnyKeyPath? { get }
 }
 
 extension Int:SqlType {
+    public var path: AnyKeyPath? {
+        return nil
+    }
+    
     public var value: Any? {
         self
     }
@@ -64,6 +69,9 @@ extension Int:SqlType {
     }
 }
 extension Int32:SqlType {
+    public var path: AnyKeyPath? {
+        return nil
+    }
     public var value: Any? {
         self
     }
@@ -94,6 +102,9 @@ extension Int32:SqlType {
     }
 }
 extension Int64:SqlType {
+    public var path: AnyKeyPath? {
+        return nil
+    }
     public var value: Any? {
         self
     }
@@ -125,6 +136,9 @@ extension Int64:SqlType {
     }
 }
 extension Int8:SqlType {
+    public var path: AnyKeyPath? {
+        return nil
+    }
     public var value: Any? {
         self
     }
@@ -156,6 +170,9 @@ extension Int8:SqlType {
     }
 }
 extension Bool:SqlType {
+    public var path: AnyKeyPath? {
+        return nil
+    }
     public var value: Any? {
         self
     }
@@ -188,6 +205,9 @@ extension Bool:SqlType {
 }
 
 extension String:SqlType {
+    public var path: AnyKeyPath? {
+        return nil
+    }
     public var value: Any? {
         self
     }
@@ -219,6 +239,9 @@ extension String:SqlType {
     }
 }
 extension Data:SqlType {
+    public var path: AnyKeyPath? {
+        return nil
+    }
     public var value: Any? {
         self
     }
@@ -251,6 +274,9 @@ extension Data:SqlType {
 }
 
 extension Double:SqlType {
+    public var path: AnyKeyPath? {
+        return nil
+    }
     public var value: Any? {
         self
     }
@@ -282,6 +308,9 @@ extension Double:SqlType {
     }
 }
 extension Float:SqlType {
+    public var path: AnyKeyPath? {
+        return nil
+    }
     public var value: Any? {
         self
     }
@@ -313,6 +342,9 @@ extension Float:SqlType {
     }
 }
 extension Optional:SqlType where Wrapped:SqlType {
+    public var path: AnyKeyPath? {
+        return nil
+    }
     public var value: Any? {
         self ?? nil
     }
@@ -347,6 +379,9 @@ extension Optional:SqlType where Wrapped:SqlType {
 
 @propertyWrapper
 public struct Unique<T:SqlType>:SqlType{
+    public var path: AnyKeyPath? {
+        return wrappedValue.path
+    }
     public var value: Any? {
         wrappedValue.value
     }
@@ -385,6 +420,9 @@ public struct Unique<T:SqlType>:SqlType{
 }
 @propertyWrapper
 public struct PrimaryKey<T:SqlType>:SqlType{
+    public var path: AnyKeyPath? {
+        return wrappedValue.path
+    }
     public var value: Any? {
         wrappedValue.value
     }
@@ -423,6 +461,9 @@ public struct PrimaryKey<T:SqlType>:SqlType{
 }
 @propertyWrapper
 public struct Default<T:SqlType>:SqlType{
+    public var path: AnyKeyPath? {
+        return wrappedValue.path
+    }
     public var value: Any? {
         wrappedValue.value
     }
@@ -462,6 +503,9 @@ public struct Default<T:SqlType>:SqlType{
 }
 @propertyWrapper
 public struct Key<T:SqlType>:SqlType{
+    public var path: AnyKeyPath?{
+        return wrappedValue.path
+    }
     public var value: Any? {
         wrappedValue.value
     }
@@ -497,9 +541,51 @@ public struct Key<T:SqlType>:SqlType{
         wrappedValue.onUpdate
     }
 }
+@propertyWrapper
+public struct ValuePath<T:SqlType>:SqlType{
+    public var path: AnyKeyPath?
+    public var value: Any? {
+        wrappedValue.value
+    }
+    public var sqlType: String{
+        wrappedValue.sqlType
+    }
+    
+    public static var sqlType: String{
+        T.sqlType
+    }
+    
+    public var wrappedValue:T
+    public init(wrappedValue:T,_ keyPath:AnyKeyPath){
+        self.wrappedValue = wrappedValue
+        self.path = keyPath
+    }
+    public var primaryKey: Bool {
+        wrappedValue.primaryKey
+    }
+    public var remoteTable: String? {
+        return wrappedValue.remoteTable
+    }
+    
+    public var remoteKey: String? {
+        return wrappedValue.remoteKey
+    }
+    public var keyName: String? = nil
+    public var onDelete: ForeignKeyAction? {
+        wrappedValue.onDelete
+    }
+    
+    public var onUpdate: ForeignKeyAction? {
+        wrappedValue.onUpdate
+    }
+}
+
 
 @propertyWrapper
 public struct ForeignKey<T:SqlType>:SqlType{
+    public var path: AnyKeyPath? {
+        return wrappedValue.path
+    }
     public var value: Any? {
         wrappedValue.value
     }
@@ -544,13 +630,17 @@ extension SQLCode{
     private var columnMap:[(label:String,value:SqlType)]{
         if Self.explictKey{
             return Mirror(reflecting: self).children.filter({$0.value is SqlType && $0.label != nil}).map { i in
-                (label:i.label!,value:i.value as! SqlType)
+                let label = i.label!
+                let lab = label.starts(with: "_") ? String(label[label.index(after: label.startIndex) ..< label.endIndex]) : label
+                return (label:lab,value:i.value as! SqlType)
             }.filter { i in
                 i.value.keyName != nil
             }
         }else{
             return Mirror(reflecting: self).children.filter({$0.value is SqlType}).map { i in
-                (label:i.label!,value:i.value as! SqlType)
+                let label = i.label!
+                let lab = label.starts(with: "_") ? String(label[label.index(after: label.startIndex) ..< label.endIndex]) : label
+                return (label:lab,value:i.value as! SqlType)
             }
         }
     }
@@ -705,10 +795,10 @@ extension SQLCode{
     }
     func doBind(resultSet:Database.ResultSet){
         for i in self.bindMap {
-            if i.value is String{
-                resultSet.bind(name: "@"+i.key)?.bind(value: i.value as! String)
-            }else if i.value is Data{
-                resultSet.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
+            if i.value.value is String{
+                resultSet.bind(name: "@"+i.key)?.bind(value: i.value.value as! String)
+            }else if i.value.value is Data{
+                resultSet.bind(name: "@"+i.key)?.bind(value: i.value.value as! Data)
             }
         }
     }

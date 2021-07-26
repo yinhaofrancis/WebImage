@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A930594726A92F0C001DA696 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = A930594626A92F0C001DA696 /* Database.swift */; };
+		A93271B526AE4970009107CA /* Fetch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A93271B426AE4970009107CA /* Fetch.swift */; };
 		A98A31C026AA8EE600B51FE5 /* Table.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98A31BF26AA8EE600B51FE5 /* Table.swift */; };
 		A98A31C226AABAC300B51FE5 /* Sql.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98A31C126AABAC300B51FE5 /* Sql.swift */; };
 		A9944F8F26AC424600E898FE /* Mirror.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9944F8E26AC424600E898FE /* Mirror.swift */; };
@@ -62,6 +63,7 @@
 
 /* Begin PBXFileReference section */
 		A930594626A92F0C001DA696 /* Database.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
+		A93271B426AE4970009107CA /* Fetch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fetch.swift; sourceTree = "<group>"; };
 		A98A31BF26AA8EE600B51FE5 /* Table.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Table.swift; sourceTree = "<group>"; };
 		A98A31C126AABAC300B51FE5 /* Sql.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sql.swift; sourceTree = "<group>"; };
 		A9944F8E26AC424600E898FE /* Mirror.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mirror.swift; sourceTree = "<group>"; };
@@ -167,6 +169,7 @@
 				A9B2EED926A4438600B64A95 /* Map.swift */,
 				A9B2EEDB26A5F50F00B64A95 /* ImageView.swift */,
 				A930594626A92F0C001DA696 /* Database.swift */,
+				A93271B426AE4970009107CA /* Fetch.swift */,
 				A98A31BF26AA8EE600B51FE5 /* Table.swift */,
 				A9944F9026AD590C00E898FE /* Backup.swift */,
 				A9944F8E26AC424600E898FE /* Mirror.swift */,
@@ -337,6 +340,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A93271B526AE4970009107CA /* Fetch.swift in Sources */,
 				A98A31C026AA8EE600B51FE5 /* Table.swift in Sources */,
 				A9B2EEDC26A5F50F00B64A95 /* ImageView.swift in Sources */,
 				A9944F8F26AC424600E898FE /* Mirror.swift in Sources */,

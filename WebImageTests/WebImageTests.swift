@@ -166,6 +166,26 @@ class WebImageTests: XCTestCase {
         let c = (ConditionKey(key: "a") > ConditionKey(key: "b")) || (ConditionKey(key: "c") < ConditionKey(key: "d") && Condition.like(lk: ConditionKey(key: "ff"), rk: "xxx%")) && Condition.isNull(lk: ConditionKey(key: "p"))
         print(c.conditionCode)
     }
+    func testSelect() throws{
+        let a = XCTestExpectation(description: "time out")
+        let req = FetchRequest(table:n.self)
+        let m = DatabaseModel(pool: self.data)
+        m.select(request: req) { i in
+            print(i.map({ m in
+                m.ds
+            }))
+            a.fulfill()
+        }
+        self.wait(for: [a], timeout: 2000)
+    }
+    func testDisplaySelect() throws{
+        let a = XCTestExpectation(description: "time out")
+        self.data.read { db in
+            try db.exec(sql: "select * from n")
+            a.fulfill()
+        }
+        self.wait(for: [a], timeout: 100)
+    }
     public func testCreate() throws{
         let a = XCTestExpectation(description: "time out")
         let model = DatabaseModel(pool: self.data)
@@ -183,7 +203,7 @@ class WebImageTests: XCTestCase {
     public func testInsert() throws{
         let a = XCTestExpectation(description: "time out")
         let model = DatabaseModel(pool: self.data)
-        var nn = n()
+        let nn = n()
         nn.name =
             """
 Dadad
@@ -204,7 +224,7 @@ asds
     public func testUpdate() throws{
         let a = XCTestExpectation(description: "time out")
         let model = DatabaseModel(pool: self.data)
-        var nn = n()
+        let nn = n()
         nn.name =
             """
 Dadad
@@ -251,7 +271,8 @@ asds
     }
 }
 
-struct n:SQLCode {
+class n: SQLCode {
+    required init() {}
     static var explictKey: Bool{
         return false
     }
@@ -260,15 +281,22 @@ struct n:SQLCode {
         return "n"
     }
     
+    @ValuePath(\n.name)
     var name: String = ""
     
     @PrimaryKey
+    @ValuePath(\n.ds)
     var ds: Int = 1
+    
+    @ValuePath(wrappedValue: Data(), \n.d)
     var d:Data?
+    
+    @ValuePath(wrappedValue: "", \n.ms)
     var ms:String?
 
 }
-struct Person:SQLCode {
+class Person:SQLCode {
+    required init() {}
     static var explictKey: Bool{
         return true
     }
@@ -286,7 +314,8 @@ struct Person:SQLCode {
     var pName: String  = ""
 }
 
-struct Order:SQLCode{
+class Order:SQLCode{
+    required init() {}
     static var explictKey: Bool{
         true
     }

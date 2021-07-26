@@ -8,6 +8,9 @@
 import XCTest
 @testable import WebImageCache
 import SQLite3
+extension Int{
+
+}
 class testRestore: XCTestCase {
 
     override func setUpWithError() throws {
@@ -23,19 +26,19 @@ class testRestore: XCTestCase {
         f.write(Data(count: 109))
         try f.close()
         try DataBasePool.restore(name: "a")
-        
         let data = try! DataBasePool(name: "a")
         data.readSync { db in
             try db.exec(sql: "select * from n")
         }
     }
+    
 
     func testBackup() throws {
         let data = try! DataBasePool(name: "a")
         let a = XCTestExpectation(description: "time out")
         let model = DatabaseModel(pool: data)
-        for i in 0 ..< 20 {
-            var nn = n()
+        for _ in 0 ..< 20 {
+            let nn = n()
             nn.name =
                 """
         Dadad
@@ -70,7 +73,7 @@ class testRestore: XCTestCase {
         }
         func insert(){
             let model = DatabaseModel(pool: data)
-            var nn = n()
+            let nn = n()
             nn.name =
                 """
         Dadad
@@ -89,7 +92,7 @@ class testRestore: XCTestCase {
 
         func update(){
             let model = DatabaseModel(pool: data)
-            var nn = n()
+            let nn = n()
             nn.name =
                 """
         Dadad
@@ -122,7 +125,7 @@ class testRestore: XCTestCase {
 
         func delete(){
             let model = DatabaseModel(pool: data)
-            var m = n()
+            let m = n()
             m.ds = 123
             model.delete(model: m)
             
@@ -134,7 +137,7 @@ class testRestore: XCTestCase {
 
         func deleteCondition(){
             let model = DatabaseModel(pool: data)
-            var m = n()
+            let m = n()
             m.ds = 123
             model.delete(table: n.self, condition: ConditionKey("_ds") == "123", bind: [:])
             

@@ -9,9 +9,10 @@ import Foundation
 import SQLite3
 
  
-public protocol SQLCode {
+public protocol SQLCode{
     static var tableName:String { get }
     static var explictKey:Bool { get }
+    init()
 }
 
 
@@ -78,6 +79,13 @@ public class DatabaseModel{
                 }
             }
             try rs.step()
+        }
+    }
+    public func select<T:SQLCode>(request:FetchRequest<T>,callback:@escaping ([T])->Void){
+        self.pool.read { db in
+            let s = try db.fetch(request: request)
+            let re = try FetchRequest<T>.readData(resultset: s)
+            callback(re)
         }
     }
     public func delete<T:SQLCode>(model:T){
