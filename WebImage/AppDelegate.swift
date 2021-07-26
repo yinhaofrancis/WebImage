@@ -16,9 +16,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
-
-        let a = mmm.asy(T: mv.self, path: \mv.i)
-        print(a)
+        
+       
         return true
     }
 
@@ -56,10 +55,10 @@ class mv:SQLCode{
     var i:Int64 = 0
     var j:Int32 = 0
     var s:String = ""
+    
+    
 
 }
-
-
 extension SQLCode{
   
 }

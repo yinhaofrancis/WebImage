@@ -570,7 +570,9 @@ public struct ValuePath<T:SqlType>:SqlType{
     public var remoteKey: String? {
         return wrappedValue.remoteKey
     }
-    public var keyName: String? = nil
+    public var keyName: String?{
+        return wrappedValue.keyName
+    }
     public var onDelete: ForeignKeyAction? {
         wrappedValue.onDelete
     }

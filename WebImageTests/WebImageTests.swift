@@ -172,7 +172,7 @@ class WebImageTests: XCTestCase {
         let m = DatabaseModel(pool: self.data)
         m.select(request: req) { i in
             print(i.map({ m in
-                m.ds
+                "ds:\(m.ds), name:\(m.name), d:\(m.d!), ms:\(m.ms!)"
             }))
             a.fulfill()
         }
@@ -185,6 +185,11 @@ class WebImageTests: XCTestCase {
             a.fulfill()
         }
         self.wait(for: [a], timeout: 100)
+    }
+    func testDisplay() throws{
+        print(n().normalKey.map { i in
+            (i.0,i.1.keyName)
+        })
     }
     public func testCreate() throws{
         let a = XCTestExpectation(description: "time out")
@@ -203,7 +208,7 @@ class WebImageTests: XCTestCase {
     public func testInsert() throws{
         let a = XCTestExpectation(description: "time out")
         let model = DatabaseModel(pool: self.data)
-        let nn = n()
+        var nn = n()
         nn.name =
             """
 Dadad
@@ -224,7 +229,7 @@ asds
     public func testUpdate() throws{
         let a = XCTestExpectation(description: "time out")
         let model = DatabaseModel(pool: self.data)
-        let nn = n()
+        var nn = n()
         nn.name =
             """
 Dadad
@@ -271,11 +276,9 @@ asds
     }
 }
 
-class n: SQLCode {
-    required init() {}
-    static var explictKey: Bool{
-        return false
-    }
+struct n: SQLCode {
+
+    static var explictKey = false
     
     static var tableName: String{
         return "n"
@@ -284,22 +287,25 @@ class n: SQLCode {
     @ValuePath(\n.name)
     var name: String = ""
     
+    @Key("number")
     @PrimaryKey
     @ValuePath(\n.ds)
     var ds: Int = 1
     
-    @ValuePath(wrappedValue: Data(), \n.d)
-    var d:Data?
     
-    @ValuePath(wrappedValue: "", \n.ms)
-    var ms:String?
+    @ValuePath(\n.d)
+    @Key("data")
+    var d:Data? = Data()
+    
+    
+    @ValuePath(\n.ms)
+    @Key("string")
+    var ms:String? = "dada"
 
 }
 class Person:SQLCode {
     required init() {}
-    static var explictKey: Bool{
-        return true
-    }
+    static var explictKey: Bool = false
     
     static var tableName: String{
         return "Person"
@@ -316,9 +322,7 @@ class Person:SQLCode {
 
 class Order:SQLCode{
     required init() {}
-    static var explictKey: Bool{
-        true
-    }
+    static var explictKey: Bool = false
     
     static var tableName: String{
         return "Order"

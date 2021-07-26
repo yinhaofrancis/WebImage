@@ -38,7 +38,7 @@ class testRestore: XCTestCase {
         let a = XCTestExpectation(description: "time out")
         let model = DatabaseModel(pool: data)
         for _ in 0 ..< 20 {
-            let nn = n()
+            var nn = n()
             nn.name =
                 """
         Dadad
@@ -73,7 +73,7 @@ class testRestore: XCTestCase {
         }
         func insert(){
             let model = DatabaseModel(pool: data)
-            let nn = n()
+            var nn = n()
             nn.name =
                 """
         Dadad
@@ -92,7 +92,7 @@ class testRestore: XCTestCase {
 
         func update(){
             let model = DatabaseModel(pool: data)
-            let nn = n()
+            var nn = n()
             nn.name =
                 """
         Dadad
@@ -125,7 +125,7 @@ class testRestore: XCTestCase {
 
         func delete(){
             let model = DatabaseModel(pool: data)
-            let m = n()
+            var m = n()
             m.ds = 123
             model.delete(model: m)
             
@@ -137,7 +137,7 @@ class testRestore: XCTestCase {
 
         func deleteCondition(){
             let model = DatabaseModel(pool: data)
-            let m = n()
+            var m = n()
             m.ds = 123
             model.delete(table: n.self, condition: ConditionKey("_ds") == "123", bind: [:])
             
