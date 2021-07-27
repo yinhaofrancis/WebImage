@@ -10,7 +10,6 @@
 		A925326426AFB7520080E72D /* Table.swift in Sources */ = {isa = PBXBuildFile; fileRef = A925325D26AFB7520080E72D /* Table.swift */; };
 		A925326526AFB7520080E72D /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = A925325E26AFB7520080E72D /* Database.swift */; };
 		A925326626AFB7520080E72D /* Fetch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A925325F26AFB7520080E72D /* Fetch.swift */; };
-		A925326726AFB7520080E72D /* Sql.swift in Sources */ = {isa = PBXBuildFile; fileRef = A925326026AFB7520080E72D /* Sql.swift */; };
 		A925326826AFB7520080E72D /* Mirror.swift in Sources */ = {isa = PBXBuildFile; fileRef = A925326126AFB7520080E72D /* Mirror.swift */; };
 		A925326926AFB7520080E72D /* Map.swift in Sources */ = {isa = PBXBuildFile; fileRef = A925326226AFB7520080E72D /* Map.swift */; };
 		A925326A26AFB7520080E72D /* Backup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A925326326AFB7520080E72D /* Backup.swift */; };
@@ -32,7 +31,6 @@
 		A925325D26AFB7520080E72D /* Table.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Table.swift; sourceTree = "<group>"; };
 		A925325E26AFB7520080E72D /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
 		A925325F26AFB7520080E72D /* Fetch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Fetch.swift; sourceTree = "<group>"; };
-		A925326026AFB7520080E72D /* Sql.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Sql.swift; sourceTree = "<group>"; };
 		A925326126AFB7520080E72D /* Mirror.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Mirror.swift; sourceTree = "<group>"; };
 		A925326226AFB7520080E72D /* Map.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Map.swift; sourceTree = "<group>"; };
 		A925326326AFB7520080E72D /* Backup.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Backup.swift; sourceTree = "<group>"; };
@@ -88,7 +86,6 @@
 				A925325F26AFB7520080E72D /* Fetch.swift */,
 				A925326226AFB7520080E72D /* Map.swift */,
 				A925326126AFB7520080E72D /* Mirror.swift */,
-				A925326026AFB7520080E72D /* Sql.swift */,
 				A925325D26AFB7520080E72D /* Table.swift */,
 				A93271ED26AFB4A5009107CA /* Info.plist */,
 			);
@@ -212,7 +209,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A925326726AFB7520080E72D /* Sql.swift in Sources */,
 				A925326A26AFB7520080E72D /* Backup.swift in Sources */,
 				A925326826AFB7520080E72D /* Mirror.swift in Sources */,
 				A925326626AFB7520080E72D /* Fetch.swift in Sources */,

@@ -6,7 +6,7 @@
 //
 
 import Foundation
-public struct ForeignKeyAction{
+public struct ForeignKeyAction:Hashable{
     let action:String
     static public var CASCADE:ForeignKeyAction = ForeignKeyAction(action: "CASCADE")
     static public var NO_ACTION:ForeignKeyAction = ForeignKeyAction(action: "NO ACTION")
@@ -341,6 +341,53 @@ extension Float:SqlType {
         nil
     }
 }
+extension Date:SqlType{
+    public var sqlType:String{
+        return "TEXT NOT NULL"
+    }
+    public static var sqlType:String{
+        return "TEXT NOT NULL"
+    }
+    
+    public var primaryKey: Bool {
+        false
+    }
+    
+    public var remoteTable: String? {
+        nil
+    }
+    
+    public var remoteKey: String? {
+        nil
+    }
+    
+    public var keyName: String? {
+        nil
+    }
+    
+    public var onDelete: ForeignKeyAction? {
+        nil
+    }
+    
+    public var onUpdate: ForeignKeyAction? {
+        nil
+    }
+    public var value: Any? {
+        dataFormat.string(from:self)
+    }
+    
+    public var path: AnyKeyPath? {
+        nil
+    }
+    public static func traslate(value:String)->Date?{
+        dataFormat.date(from: value)
+    }
+}
+let dataFormat:DateFormatter = {
+    let fmt = DateFormatter()
+    fmt.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+    return fmt
+}()
 extension Optional:SqlType where Wrapped:SqlType {
     public var path: AnyKeyPath? {
         return nil
@@ -472,7 +519,7 @@ public struct Default<T:SqlType>:SqlType{
     }
     
     public var sqlType: String{
-        wrappedValue.sqlType + "  DEFAULT `\(self.defaultvalue)`"
+        wrappedValue.sqlType + "  DEFAULT \(self.defaultvalue)"
     }
     public var wrappedValue:T
     public var defaultvalue:String

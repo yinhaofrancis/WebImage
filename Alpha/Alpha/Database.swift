@@ -24,7 +24,7 @@ public class Database:Hashable{
         let r = readOnly ? SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX  : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX)
         sqlite3_open_v2(url.path, &self.sqlite, r , nil)
         if(self.sqlite == nil){
-            throw NSError(domain: "create sqlite3 fail", code: 0, userInfo: nil)
+            throw NSError(domain: "create sqlite3 fail", code: 0, userInfo: ["url":url])
         }
     }
     deinit {
@@ -174,7 +174,8 @@ public class Database:Hashable{
             if rc == SQLITE_DONE{
                 return false
             }
-            throw NSError(domain: String(cString: sqlite3_errmsg(self.db.sqlite!)), code: Int(rc), userInfo: nil)
+            
+            throw NSError(domain: String(cString: sqlite3_errmsg(self.db.sqlite!)), code: Int(rc), userInfo: ["sql":String(cString: sqlite3_sql(self.stmt))])
         }
         public func next() throws ->ResultSet?{
             guard let sql = self.nextSql else {
@@ -488,7 +489,7 @@ public struct TableForeignKeyInfo{
     public let seq:Int
     public let table:String
     public let from:String
-    public let To:String
+    public let to:String
     public let onUpdate:ForeignKeyAction
     public let onDelete:ForeignKeyAction
     public let match:String
@@ -496,6 +497,9 @@ public struct TableForeignKeyInfo{
 
 extension Database{
     public func exec(sql:String) throws {
+        #if DEBUG
+        print("SQL:"+sql)
+        #endif
         var error:UnsafeMutablePointer<CChar>?
         sqlite3_exec(self.sqlite, sql, { arg, len, v,col in
             print("<<<<<<<<<<<<")
@@ -510,17 +514,20 @@ extension Database{
         if let e = error{
             let data = Data(bytes: e, count: strlen(e))
             sqlite3_free(error)
-            throw NSError(domain: String(data: data, encoding: .utf8) ?? "unknow error", code: 0, userInfo: nil)
+            throw NSError(domain: String(data: data, encoding: .utf8) ?? "unknow error", code: 0, userInfo: ["sql":sql])
         }
     }
     public func query(sql:String) throws ->ResultSet{
+        #if DEBUG
+        print("SQL:"+sql)
+        #endif
         var stmt:OpaquePointer?
         let nextSql:UnsafeMutablePointer<UnsafePointer<CChar>?> = .allocate(capacity: 1)
         let rc = sqlite3_prepare(self.sqlite, sql, Int32(sql.utf8.count), &stmt, nextSql)
         if rc != SQLITE_OK{
-            throw NSError(domain: String(cString: sqlite3_errmsg(self.sqlite!)), code: Int(rc), userInfo: nil)
+            throw NSError(domain: String(cString: sqlite3_errmsg(self.sqlite!)), code: Int(rc), userInfo: ["sql":sql])
         }
-        guard let s = stmt else { throw NSError(domain: String(cString: sqlite3_errmsg(self.sqlite!)), code: 0, userInfo: nil)}
+        guard let s = stmt else { throw NSError(domain: String(cString: sqlite3_errmsg(self.sqlite!)), code: 0, userInfo: ["sql":sql])}
         if let cs = nextSql.pointee{
             let nsql = String(cString: cs)
             nextSql.deallocate()
@@ -580,7 +587,7 @@ extension Database{
                                           seq: r.column(index: 1, type: Int.self).value(),
                                           table:r.column(index: 2, type: String.self).value(),
                                           from:r.column(index: 3, type: String.self).value(),
-                                          To:r.column(index: 4, type: String.self).value(),
+                                          to:r.column(index: 4, type: String.self).value(),
                                           onUpdate: ForeignKeyAction(action: r.column(index: 5, type: String.self).value()),
                                           onDelete: ForeignKeyAction(action: r.column(index: 6, type: String.self).value()),
                                           match: r.column(index: 7, type: String.self).value())
@@ -610,5 +617,68 @@ extension Database{
             try? self.exec(sql: "PRAGMA foreign_keys = \(newValue ? "ON" : "OFF")")
         }
     }
-//    public var foreignList:
+    public func create<T:SQLCode>(obj:T) throws{
+        try self.exec(sql: obj.create)
+    }
+    public func exist<T:SQLCode>(type:T.Type) throws ->Bool{
+        var state = false
+        let r = try self.query(sql: "select count(*) from sqlite_master where type='table' and name = '\(type.tableName)'")
+        while try r.step(){
+            state = r.column(index: 0, type: Int32.self).value() > 0
+        }
+        return state
+    }
+    public func update<T:SQLCode>(model:T) throws {
+        try model.doUpdate(db: self)
+    }
+    public func update<T:SQLCode>(model:[String:SqlType],table:T.Type,condition:Condition,bind:[String:SqlType]) throws {
+        let kv = model.map { i in
+            T.updateSetKeyCode((i.key,i.value))
+        }.joined(separator: ",")
+        let c = "UPDATE \(T.tableName) SET \(kv) where \(condition.conditionCode)"
+        let rs = try self.query(sql: c)
+        for i in model{
+            if i.value is Data{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
+            }else if i.value is String{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
+            }
+        }
+        for i in bind{
+            if i.value is Data{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
+            }else if i.value is String{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
+            }
+        }
+        try rs.step()
+        rs.close()
+    }
+    public func delete<T:SQLCode>(table:T.Type,condition:Condition,bind:[String:SqlType]) throws {
+        let c = "DELETE FROM \(T.tableName) where \(condition.conditionCode)"
+        let rs = try self.query(sql: c)
+        for i in bind{
+            if i.value is Data{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
+            }else if i.value is String{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
+            }
+        }
+        try rs.step()
+        rs.close()
+    }
+    public func select<T:SQLCode>(request:FetchRequest<T>) throws ->[T]{
+        let s = try self.fetch(request: request)
+        let re = try FetchRequest<T>.readData(resultset: s)
+        return re
+    }
+    public func delete<T:SQLCode>(model:T) throws {
+        try model.doDelete(db: self)
+    }
+    public func insert<T:SQLCode>(model:T) throws{
+        try model.doInsert(db: self)
+    }
+    public func drop<T:SQLCode>(modelType:T.Type) throws{
+        try self.exec(sql: "drop table \(T.tableName)")
+    }
 }
