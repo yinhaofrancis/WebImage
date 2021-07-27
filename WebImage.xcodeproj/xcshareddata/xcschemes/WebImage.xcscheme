@@ -49,6 +49,16 @@
                ReferencedContainer = "container:WebImage.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A93271C726AFB168009107CA"
+               BuildableName = "AlphaTests.xctest"
+               BlueprintName = "AlphaTests"
+               ReferencedContainer = "container:WebImage.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

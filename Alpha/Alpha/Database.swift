@@ -27,66 +27,6 @@ public class Database:Hashable{
             throw NSError(domain: "create sqlite3 fail", code: 0, userInfo: nil)
         }
     }
-    public func exec(sql:String) throws {
-        var error:UnsafeMutablePointer<CChar>?
-        sqlite3_exec(self.sqlite, sql, { arg, len, v,col in
-            print("<<<<<<<<<<<<")
-            for i in 0 ..< len{
-                let vstr = v?[Int(i)] == nil ? "NULL" : String(cString: v![Int(i)]!)
-                let cStr = col?[Int(i)] == nil ? "NULL" : String(cString: col![Int(i)]!)
-                print("\(cStr):\(vstr)")
-            }
-            print(">>>>>>>>>>>>>")
-            return 0
-        }, nil, &error)
-        if let e = error{
-            let data = Data(bytes: e, count: strlen(e))
-            sqlite3_free(error)
-            throw NSError(domain: String(data: data, encoding: .utf8) ?? "unknow error", code: 0, userInfo: nil)
-        }
-    }
-    public func query(sql:String) throws ->ResultSet{
-        var stmt:OpaquePointer?
-        let nextSql:UnsafeMutablePointer<UnsafePointer<CChar>?> = .allocate(capacity: 1)
-        let rc = sqlite3_prepare(self.sqlite, sql, Int32(sql.utf8.count), &stmt, nextSql)
-        if rc != SQLITE_OK{
-            throw NSError(domain: String(cString: sqlite3_errmsg(self.sqlite!)), code: Int(rc), userInfo: nil)
-        }
-        guard let s = stmt else { throw NSError(domain: String(cString: sqlite3_errmsg(self.sqlite!)), code: 0, userInfo: nil)}
-        if let cs = nextSql.pointee{
-            let nsql = String(cString: cs)
-            nextSql.deallocate()
-            return ResultSet(stmt: s, db: self,nextSql: nsql)
-        }else{
-            return ResultSet(stmt: s, db: self)
-        }
-    }
-    public func addScalarFunction(function:ScalarFunction){
-    
-        self.functions.append(function)
-        sqlite3_create_function(self.sqlite!, function.name, function.nArg, SQLITE_UTF8, Unmanaged.passUnretained(function).toOpaque(), { ctx, i, ret in
-            let call = Unmanaged<ScalarFunction>.fromOpaque(sqlite3_user_data(ctx)).takeUnretainedValue()
-            call.ctx = ctx
-            call.call(call,i,ret?.pointee)
-        }, nil, nil)
-    }
-    public func rollback(){
-        sqlite3_rollback_hook(sqlite, nil, nil)
-    }
-    public func commit(){
-        sqlite3_commit_hook(self.sqlite, nil, nil)
-    }
-    public func close(){
-        sqlite3_close(self.sqlite)
-    }
-    public func fetch<T:SQLCode>(request:FetchRequest<T>) throws->ResultSet{
-        let rs = try self.query(sql: request.sql)
-        request.doSelectBind(result: rs)
-        return rs
-    }
-    public static func errormsg(pointer:OpaquePointer?)->String{
-        String(cString: sqlite3_errmsg(pointer))
-    }
     deinit {
         sqlite3_close(self.sqlite)
     }
@@ -440,11 +380,7 @@ public class DataBasePool{
         })
         self.thread?.start()
     }
-    public func openForeignKeys(){
-        self.write { db in
-            try db.exec(sql: "PRAGMA foreign_keys = ON")
-        }
-    }
+
     public func read(callback:@escaping (Database) throws->Void){
         self.queue.async {
             do {
@@ -537,4 +473,142 @@ public class DataBasePool{
         self.thread?.cancel()
         self.timer?.invalidate()
     }
+}
+
+public struct TableInfo{
+    public let cid:Int
+    public let name:String
+    public let type:String
+    public let notnull:Int
+    public let dlft_value:String
+    public let pk:Int
+}
+public struct TableForeignKeyInfo{
+    public let id:Int
+    public let seq:Int
+    public let table:String
+    public let from:String
+    public let To:String
+    public let onUpdate:ForeignKeyAction
+    public let onDelete:ForeignKeyAction
+    public let match:String
+}
+
+extension Database{
+    public func exec(sql:String) throws {
+        var error:UnsafeMutablePointer<CChar>?
+        sqlite3_exec(self.sqlite, sql, { arg, len, v,col in
+            print("<<<<<<<<<<<<")
+            for i in 0 ..< len{
+                let vstr = v?[Int(i)] == nil ? "NULL" : String(cString: v![Int(i)]!)
+                let cStr = col?[Int(i)] == nil ? "NULL" : String(cString: col![Int(i)]!)
+                print("\(cStr):\(vstr)")
+            }
+            print(">>>>>>>>>>>>>")
+            return 0
+        }, nil, &error)
+        if let e = error{
+            let data = Data(bytes: e, count: strlen(e))
+            sqlite3_free(error)
+            throw NSError(domain: String(data: data, encoding: .utf8) ?? "unknow error", code: 0, userInfo: nil)
+        }
+    }
+    public func query(sql:String) throws ->ResultSet{
+        var stmt:OpaquePointer?
+        let nextSql:UnsafeMutablePointer<UnsafePointer<CChar>?> = .allocate(capacity: 1)
+        let rc = sqlite3_prepare(self.sqlite, sql, Int32(sql.utf8.count), &stmt, nextSql)
+        if rc != SQLITE_OK{
+            throw NSError(domain: String(cString: sqlite3_errmsg(self.sqlite!)), code: Int(rc), userInfo: nil)
+        }
+        guard let s = stmt else { throw NSError(domain: String(cString: sqlite3_errmsg(self.sqlite!)), code: 0, userInfo: nil)}
+        if let cs = nextSql.pointee{
+            let nsql = String(cString: cs)
+            nextSql.deallocate()
+            return ResultSet(stmt: s, db: self,nextSql: nsql)
+        }else{
+            return ResultSet(stmt: s, db: self)
+        }
+    }
+    public func addScalarFunction(function:ScalarFunction){
+    
+        self.functions.append(function)
+        sqlite3_create_function(self.sqlite!, function.name, function.nArg, SQLITE_UTF8, Unmanaged.passUnretained(function).toOpaque(), { ctx, i, ret in
+            let call = Unmanaged<ScalarFunction>.fromOpaque(sqlite3_user_data(ctx)).takeUnretainedValue()
+            call.ctx = ctx
+            call.call(call,i,ret?.pointee)
+        }, nil, nil)
+    }
+    public func rollback(){
+        sqlite3_rollback_hook(sqlite, nil, nil)
+    }
+    public func commit(){
+        sqlite3_commit_hook(self.sqlite, nil, nil)
+    }
+    public func close(){
+        sqlite3_close(self.sqlite)
+    }
+    public func fetch<T:SQLCode>(request:FetchRequest<T>) throws->ResultSet{
+        let rs = try self.query(sql: request.sql)
+        request.doSelectBind(result: rs)
+        return rs
+    }
+    public static func errormsg(pointer:OpaquePointer?)->String{
+        String(cString: sqlite3_errmsg(pointer))
+    }
+    public func tableInfo(name:String) throws ->[String:TableInfo]{
+        let r = try self.query(sql: "PRAGMA table_info(\(name))")
+        var map:[String:TableInfo] = [:]
+        while try r.step() {
+            
+            let tav = TableInfo(cid: r.column(index: 0, type: Int.self).value(),
+                                name: r.column(index: 1, type: String.self).value(),
+                                type: r.column(index: 2, type: String.self).value(),
+                                notnull: r.column(index: 3, type: Int.self).value(),
+                                dlft_value: r.column(index: 4, type: String.self).value(),
+                                pk: r.column(index: 5, type: Int.self).value())
+            map[tav.name] = tav
+            
+        }
+        return map
+    }
+    public func tableForeignKeyInfo(name:String) throws ->[String:TableForeignKeyInfo]{
+        let r = try self.query(sql: "PRAGMA foreign_key_list(\(name));")
+        var map:[String:TableForeignKeyInfo] = [:]
+        while try r.step() {
+            
+            let tav = TableForeignKeyInfo(id: r.column(index: 0, type: Int.self).value(),
+                                          seq: r.column(index: 1, type: Int.self).value(),
+                                          table:r.column(index: 2, type: String.self).value(),
+                                          from:r.column(index: 3, type: String.self).value(),
+                                          To:r.column(index: 4, type: String.self).value(),
+                                          onUpdate: ForeignKeyAction(action: r.column(index: 5, type: String.self).value()),
+                                          onDelete: ForeignKeyAction(action: r.column(index: 6, type: String.self).value()),
+                                          match: r.column(index: 7, type: String.self).value())
+            map[tav.from] = tav
+        }
+        return map
+    }
+    public func integrityCheck(table:String) throws ->Bool{
+        let r = try self.query(sql: "PRAGMA INTEGRITY_CHECK(\(table))")
+        if try r.step(){
+            return r.column(index: 0, type: String.self).value() == "ok"
+        }
+        return false
+    }
+    public var foreignKey:Bool{
+        get{
+            do{
+                let r = try self.query(sql: "PRAGMA foreign_keys")
+                try r.step()
+                return r.column(index: 0, type: Int8.self).value() > 0
+            }catch{
+                return false
+            }
+            
+        }
+        set{
+            try? self.exec(sql: "PRAGMA foreign_keys = \(newValue ? "ON" : "OFF")")
+        }
+    }
+//    public var foreignList:
 }

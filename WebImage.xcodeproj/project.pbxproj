@@ -7,18 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A930594726A92F0C001DA696 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = A930594626A92F0C001DA696 /* Database.swift */; };
-		A93271B526AE4970009107CA /* Fetch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A93271B426AE4970009107CA /* Fetch.swift */; };
-		A98A31C026AA8EE600B51FE5 /* Table.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98A31BF26AA8EE600B51FE5 /* Table.swift */; };
-		A98A31C226AABAC300B51FE5 /* Sql.swift in Sources */ = {isa = PBXBuildFile; fileRef = A98A31C126AABAC300B51FE5 /* Sql.swift */; };
-		A9944F8F26AC424600E898FE /* Mirror.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9944F8E26AC424600E898FE /* Mirror.swift */; };
-		A9944F9126AD590C00E898FE /* Backup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9944F9026AD590C00E898FE /* Backup.swift */; };
-		A9944FC626ADB0E100E898FE /* testRestore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9944FC526ADB0E100E898FE /* testRestore.swift */; };
 		A9A0355F26A87F1300CC5F02 /* Network.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A0355E26A87F1300CC5F02 /* Network.swift */; };
 		A9A0356126A8803700CC5F02 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A0356026A8803700CC5F02 /* Model.swift */; };
-		A9B2EECE26A3B31200B64A95 /* WebImageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B2EECD26A3B31200B64A95 /* WebImageTests.swift */; };
 		A9B2EED626A4138000B64A95 /* Downloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B2EED526A4138000B64A95 /* Downloader.swift */; };
-		A9B2EEDA26A4438600B64A95 /* Map.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B2EED926A4438600B64A95 /* Map.swift */; };
 		A9B2EEDC26A5F50F00B64A95 /* ImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B2EEDB26A5F50F00B64A95 /* ImageView.swift */; };
 		A9D4771A26A32E4900264339 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D4771926A32E4900264339 /* AppDelegate.swift */; };
 		A9D4771E26A32E4900264339 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D4771D26A32E4900264339 /* ViewController.swift */; };
@@ -31,13 +22,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		A9B2EED026A3B31200B64A95 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A9D4770E26A32E4900264339 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = A9D4771526A32E4900264339;
-			remoteInfo = WebImage;
-		};
 		A9D4773726A32E7500264339 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A9D4770E26A32E4900264339 /* Project object */;
@@ -62,20 +46,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		A930594626A92F0C001DA696 /* Database.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
-		A93271B426AE4970009107CA /* Fetch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fetch.swift; sourceTree = "<group>"; };
-		A98A31BF26AA8EE600B51FE5 /* Table.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Table.swift; sourceTree = "<group>"; };
-		A98A31C126AABAC300B51FE5 /* Sql.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sql.swift; sourceTree = "<group>"; };
-		A9944F8E26AC424600E898FE /* Mirror.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mirror.swift; sourceTree = "<group>"; };
-		A9944F9026AD590C00E898FE /* Backup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Backup.swift; sourceTree = "<group>"; };
-		A9944FC526ADB0E100E898FE /* testRestore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = testRestore.swift; sourceTree = "<group>"; };
 		A9A0355E26A87F1300CC5F02 /* Network.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Network.swift; sourceTree = "<group>"; };
 		A9A0356026A8803700CC5F02 /* Model.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
-		A9B2EECB26A3B31200B64A95 /* WebImageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WebImageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A9B2EECD26A3B31200B64A95 /* WebImageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebImageTests.swift; sourceTree = "<group>"; };
-		A9B2EECF26A3B31200B64A95 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A9B2EED526A4138000B64A95 /* Downloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Downloader.swift; sourceTree = "<group>"; };
-		A9B2EED926A4438600B64A95 /* Map.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Map.swift; sourceTree = "<group>"; };
 		A9B2EEDB26A5F50F00B64A95 /* ImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageView.swift; sourceTree = "<group>"; };
 		A9D4771626A32E4900264339 /* WebImage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WebImage.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A9D4771926A32E4900264339 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -90,13 +63,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A9B2EEC826A3B31200B64A95 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A9D4771326A32E4900264339 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,22 +81,11 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A9B2EECC26A3B31200B64A95 /* WebImageTests */ = {
-			isa = PBXGroup;
-			children = (
-				A9B2EECD26A3B31200B64A95 /* WebImageTests.swift */,
-				A9B2EECF26A3B31200B64A95 /* Info.plist */,
-				A9944FC526ADB0E100E898FE /* testRestore.swift */,
-			);
-			path = WebImageTests;
-			sourceTree = "<group>";
-		};
 		A9D4770D26A32E4900264339 = {
 			isa = PBXGroup;
 			children = (
 				A9D4771826A32E4900264339 /* WebImage */,
 				A9D4773326A32E7500264339 /* WebImageCache */,
-				A9B2EECC26A3B31200B64A95 /* WebImageTests */,
 				A9D4771726A32E4900264339 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -140,7 +95,6 @@
 			children = (
 				A9D4771626A32E4900264339 /* WebImage.app */,
 				A9D4773226A32E7500264339 /* WebImageCache.framework */,
-				A9B2EECB26A3B31200B64A95 /* WebImageTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -166,14 +120,7 @@
 				A9D4773526A32E7500264339 /* Info.plist */,
 				A9D4773F26A331B900264339 /* Disk.swift */,
 				A9B2EED526A4138000B64A95 /* Downloader.swift */,
-				A9B2EED926A4438600B64A95 /* Map.swift */,
 				A9B2EEDB26A5F50F00B64A95 /* ImageView.swift */,
-				A930594626A92F0C001DA696 /* Database.swift */,
-				A93271B426AE4970009107CA /* Fetch.swift */,
-				A98A31BF26AA8EE600B51FE5 /* Table.swift */,
-				A9944F9026AD590C00E898FE /* Backup.swift */,
-				A9944F8E26AC424600E898FE /* Mirror.swift */,
-				A98A31C126AABAC300B51FE5 /* Sql.swift */,
 			);
 			path = WebImageCache;
 			sourceTree = "<group>";
@@ -191,24 +138,6 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		A9B2EECA26A3B31200B64A95 /* WebImageTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A9B2EED426A3B31200B64A95 /* Build configuration list for PBXNativeTarget "WebImageTests" */;
-			buildPhases = (
-				A9B2EEC726A3B31200B64A95 /* Sources */,
-				A9B2EEC826A3B31200B64A95 /* Frameworks */,
-				A9B2EEC926A3B31200B64A95 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				A9B2EED126A3B31200B64A95 /* PBXTargetDependency */,
-			);
-			name = WebImageTests;
-			productName = WebImageTests;
-			productReference = A9B2EECB26A3B31200B64A95 /* WebImageTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 		A9D4771526A32E4900264339 /* WebImage */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A9D4772A26A32E4C00264339 /* Build configuration list for PBXNativeTarget "WebImage" */;
@@ -255,10 +184,6 @@
 				LastSwiftUpdateCheck = 1250;
 				LastUpgradeCheck = 1250;
 				TargetAttributes = {
-					A9B2EECA26A3B31200B64A95 = {
-						CreatedOnToolsVersion = 12.5.1;
-						TestTargetID = A9D4771526A32E4900264339;
-					};
 					A9D4771526A32E4900264339 = {
 						CreatedOnToolsVersion = 12.5.1;
 					};
@@ -283,19 +208,11 @@
 			targets = (
 				A9D4771526A32E4900264339 /* WebImage */,
 				A9D4773126A32E7500264339 /* WebImageCache */,
-				A9B2EECA26A3B31200B64A95 /* WebImageTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A9B2EEC926A3B31200B64A95 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A9D4771426A32E4900264339 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -316,15 +233,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A9B2EEC726A3B31200B64A95 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A9944FC626ADB0E100E898FE /* testRestore.swift in Sources */,
-				A9B2EECE26A3B31200B64A95 /* WebImageTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A9D4771226A32E4900264339 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -340,15 +248,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A93271B526AE4970009107CA /* Fetch.swift in Sources */,
-				A98A31C026AA8EE600B51FE5 /* Table.swift in Sources */,
 				A9B2EEDC26A5F50F00B64A95 /* ImageView.swift in Sources */,
-				A9944F8F26AC424600E898FE /* Mirror.swift in Sources */,
 				A9B2EED626A4138000B64A95 /* Downloader.swift in Sources */,
-				A9B2EEDA26A4438600B64A95 /* Map.swift in Sources */,
-				A98A31C226AABAC300B51FE5 /* Sql.swift in Sources */,
-				A9944F9126AD590C00E898FE /* Backup.swift in Sources */,
-				A930594726A92F0C001DA696 /* Database.swift in Sources */,
 				A9D4774026A331B900264339 /* Disk.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -356,11 +257,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		A9B2EED126A3B31200B64A95 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = A9D4771526A32E4900264339 /* WebImage */;
-			targetProxy = A9B2EED026A3B31200B64A95 /* PBXContainerItemProxy */;
-		};
 		A9D4773826A32E7500264339 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A9D4773126A32E7500264339 /* WebImageCache */;
@@ -388,44 +284,6 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		A9B2EED226A3B31200B64A95 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = WebImageTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.yinhao.WebImageTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WebImage.app/WebImage";
-			};
-			name = Debug;
-		};
-		A9B2EED326A3B31200B64A95 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = WebImageTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.yinhao.WebImageTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WebImage.app/WebImage";
-			};
-			name = Release;
-		};
 		A9D4772826A32E4C00264339 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -644,15 +502,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A9B2EED426A3B31200B64A95 /* Build configuration list for PBXNativeTarget "WebImageTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A9B2EED226A3B31200B64A95 /* Debug */,
-				A9B2EED326A3B31200B64A95 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		A9D4771126A32E4900264339 /* Build configuration list for PBXProject "WebImage" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
