@@ -216,6 +216,13 @@ public class Database:Hashable{
             }
             return Bind<T>.init(stmt: self.stmt, index: index)
         }
+        public func bindNull(index:Int32){
+            sqlite3_bind_null(self.stmt, index)
+        }
+        public func bindNull(name:String){
+            let index = self.index(paramName: name)
+            sqlite3_bind_null(self.stmt, index)
+        }
         public func column<T>(index:Int32,type:T.Type)->Column<T>{
             Column.init(stmt: self.stmt, index: index)
         }        
@@ -237,9 +244,6 @@ public class Database:Hashable{
             }
             public func bind(value:T) where T == Int64{
                 sqlite3_bind_int64(self.stmt, index, value)
-            }
-            public func bind(value:T) where T == Int8{
-                sqlite3_bind_int(self.stmt, index, Int32(value))
             }
             public func bind(value:T) where T == Double{
                 sqlite3_bind_double(self.stmt, index, value)
@@ -266,9 +270,6 @@ public class Database:Hashable{
                     sqlite3_free(po)
                 }
             }
-            public func bind(){
-                sqlite3_bind_null(self.stmt, self.index)
-            }
             public var name:String{
                 String(cString: sqlite3_bind_parameter_name(self.stmt, self.index))
             }
@@ -292,9 +293,6 @@ public class Database:Hashable{
             }
             public func value()->T where T == Float{
                 Float(sqlite3_column_double(self.stmt,index))
-            }
-            public func value()->T where T == Int8{
-                Int8(sqlite3_column_int(self.stmt,index))
             }
             public func value()->T where T == Int{
                 if MemoryLayout<T>.size == 4{
@@ -607,7 +605,7 @@ extension Database{
             do{
                 let r = try self.query(sql: "PRAGMA foreign_keys")
                 try r.step()
-                return r.column(index: 0, type: Int8.self).value() > 0
+                return r.column(index: 0, type: Int32.self).value() > 0
             }catch{
                 return false
             }
@@ -631,17 +629,18 @@ extension Database{
     public func update<T:SQLCode>(model:T) throws {
         try model.doUpdate(db: self)
     }
-    public func update<T:SQLCode>(model:[String:SqlType],table:T.Type,condition:Condition,bind:[String:SqlType]) throws {
+    public func update<T:SQLCode>(model:[String:SqlType],table:T.Type,condition:Condition,bind:[String:OriginValue]) throws {
         let kv = model.map { i in
             T.updateSetKeyCode((i.key,i.value))
-        }.joined(separator: ",")
+        }.compactMap({$0}).joined(separator: ",")
         let c = "UPDATE \(T.tableName) SET \(kv) where \(condition.conditionCode)"
         let rs = try self.query(sql: c)
         for i in model{
-            if i.value is Data{
-                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
-            }else if i.value is String{
-                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
+            
+            if i.value.value is Data{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value.value as! Data)
+            }else if i.value.value is String{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value.value as! String)
             }
         }
         for i in bind{
@@ -654,7 +653,7 @@ extension Database{
         try rs.step()
         rs.close()
     }
-    public func delete<T:SQLCode>(table:T.Type,condition:Condition,bind:[String:SqlType]) throws {
+    public func delete<T:SQLCode>(table:T.Type,condition:Condition,bind:[String:OriginValue]) throws {
         let c = "DELETE FROM \(T.tableName) where \(condition.conditionCode)"
         let rs = try self.query(sql: c)
         for i in bind{
@@ -672,6 +671,14 @@ extension Database{
         let re = try FetchRequest<T>.readData(resultset: s)
         return re
     }
+    public func select<T:SQLCode>(model:T) throws ->T?{
+        let r = FetchRequest<T>(obj: model)
+        r.loadKeyMap(map: model.primaryConditionBindMap)
+        let s = try self.fetch(request: r)
+        
+        let re = try FetchRequest<T>.readData(resultset: s).first
+        return re
+    }
     public func delete<T:SQLCode>(model:T) throws {
         try model.doDelete(db: self)
     }
@@ -679,6 +686,6 @@ extension Database{
         try model.doInsert(db: self)
     }
     public func drop<T:SQLCode>(modelType:T.Type) throws{
-        try self.exec(sql: "drop table \(T.tableName)")
+        try self.exec(sql: "drop table if exists `\(T.tableName)`")
     }
 }

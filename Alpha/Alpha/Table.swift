@@ -11,6 +11,5 @@ import SQLite3
  
 public protocol SQLCode{
     static var tableName:String { get }
-    static var explictKey:Bool { get }
     init()
 }

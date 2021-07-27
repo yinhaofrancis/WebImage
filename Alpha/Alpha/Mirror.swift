@@ -15,8 +15,12 @@ public struct ForeignKeyAction:Hashable{
     static public var SET_DEFAULT:ForeignKeyAction = ForeignKeyAction(action: "SET DEFAULT")
 }
 
-public protocol SqlType{
+public protocol OriginValue{
     static var sqlType:String { get }
+    var sqlType:String { get }
+}
+
+public protocol SqlType{
     var sqlType:String { get }
     var primaryKey:Bool { get }
     var remoteTable:String? { get }
@@ -24,43 +28,11 @@ public protocol SqlType{
     var keyName:String? { get }
     var onDelete:ForeignKeyAction? { get }
     var onUpdate:ForeignKeyAction? { get }
-    var value:Any? { get }
+    var value:OriginValue? { get }
     var path:AnyKeyPath? { get }
 }
 
-extension Int:SqlType {
-    public var path: AnyKeyPath? {
-        return nil
-    }
-    
-    public var value: Any? {
-        self
-    }
-    
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
-    }
-    
-    public var keyName: String? {
-        return nil
-    }
-    
-    public var remoteTable: String? {
-        return nil
-    }
-    
-    public var remoteKey: String? {
-        return nil
-    }
-    
-    public var primaryKey: Bool {
-        false
-    }
-    
+extension Int:OriginValue {
     public var sqlType:String{
         return "INTEGER NOT NULL"
     }
@@ -68,376 +40,80 @@ extension Int:SqlType {
         return "INTEGER NOT NULL"
     }
 }
-extension Int32:SqlType {
-    public var path: AnyKeyPath? {
-        return nil
-    }
-    public var value: Any? {
-        self
-    }
+extension Int32:OriginValue {
     public var sqlType:String{
         return "INTEGER NOT NULL"
     }
     public static var sqlType:String{
         return "INTEGER NOT NULL"
-    }
-    public var primaryKey: Bool {
-        false
-    }
-    public var remoteTable: String? {
-        return nil
-    }
-    public var keyName: String? {
-        return nil
-    }
-    public var remoteKey: String? {
-        return nil
-    }
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
     }
 }
-extension Int64:SqlType {
-    public var path: AnyKeyPath? {
-        return nil
-    }
-    public var value: Any? {
-        self
-    }
+extension Int64:OriginValue {
+
     public var sqlType:String{
         return "INTEGER NOT NULL"
     }
     public static var sqlType:String{
         return "INTEGER NOT NULL"
-    }
-    public var primaryKey: Bool {
-        false
-    }
-    public var remoteTable: String? {
-        return nil
-    }
-    
-    public var remoteKey: String? {
-        return nil
-    }
-    public var keyName: String? {
-        return nil
-    }
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
     }
 }
-extension Int8:SqlType {
-    public var path: AnyKeyPath? {
-        return nil
-    }
-    public var value: Any? {
-        self
-    }
+extension Bool:OriginValue {
     public var sqlType:String{
         return "INTEGER NOT NULL"
     }
     public static var sqlType:String{
         return "INTEGER NOT NULL"
-    }
-    public var primaryKey: Bool {
-        false
-    }
-    public var remoteTable: String? {
-        return nil
-    }
-    
-    public var remoteKey: String? {
-        return nil
-    }
-    public var keyName: String? {
-        return nil
-    }
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
-    }
-}
-extension Bool:SqlType {
-    public var path: AnyKeyPath? {
-        return nil
-    }
-    public var value: Any? {
-        self
-    }
-    public var sqlType:String{
-        return "INTEGER NOT NULL"
-    }
-    public static var sqlType:String{
-        return "INTEGER NOT NULL"
-    }
-    public var primaryKey: Bool {
-        false
-    }
-    public var remoteTable: String? {
-        return nil
-    }
-    
-    public var remoteKey: String? {
-        return nil
-    }
-    public var keyName: String? {
-        return nil
-    }
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
     }
 }
 
-extension String:SqlType {
-    public var path: AnyKeyPath? {
-        return nil
-    }
-    public var value: Any? {
-        self
-    }
+extension String:OriginValue {
     public var sqlType:String{
         return "TEXT NOT NULL"
     }
     public static var sqlType:String{
         return "TEXT NOT NULL"
     }
-    public var primaryKey: Bool {
-        false
-    }
-    public var remoteTable: String? {
-        return nil
-    }
-    
-    public var remoteKey: String? {
-        return nil
-    }
-    public var keyName: String? {
-        return nil
-    }
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
-    }
 }
-extension Data:SqlType {
-    public var path: AnyKeyPath? {
-        return nil
-    }
-    public var value: Any? {
-        self
-    }
+extension Data:OriginValue {
     public var sqlType:String{
         return "BLOB NOT NULL"
     }
     public static var sqlType:String{
         return "BLOB NOT NULL"
     }
-    public var primaryKey: Bool {
-        false
-    }
-    public var remoteTable: String? {
-        return nil
-    }
-    
-    public var remoteKey: String? {
-        return nil
-    }
-    public var keyName: String? {
-        return nil
-    }
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
-    }
 }
 
-extension Double:SqlType {
-    public var path: AnyKeyPath? {
-        return nil
-    }
-    public var value: Any? {
-        self
-    }
-    public var sqlType:String{
-        return "REAL NOT NULL"
-    }
-    public static var sqlType:String{
-        return "REAL NOT NULL"
-    }
-    public var primaryKey: Bool {
-        false
-    }
-    public var remoteTable: String? {
-        return nil
-    }
-    
-    public var remoteKey: String? {
-        return nil
-    }
-    public var keyName: String? {
-        return nil
-    }
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
-    }
-}
-extension Float:SqlType {
-    public var path: AnyKeyPath? {
-        return nil
-    }
-    public var value: Any? {
-        self
-    }
-    public var sqlType:String{
-        return "REAL NOT NULL"
-    }
-    public static var sqlType:String{
-        return "REAL NOT NULL"
-    }
-    public var primaryKey: Bool {
-        false
-    }
-    public var remoteTable: String? {
-        return nil
-    }
-    
-    public var remoteKey: String? {
-        return nil
-    }
-    public var keyName: String? {
-        return nil
-    }
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
-    }
-}
-extension Date:SqlType{
-    public var sqlType:String{
-        return "TEXT NOT NULL"
-    }
-    public static var sqlType:String{
-        return "TEXT NOT NULL"
-    }
-    
-    public var primaryKey: Bool {
-        false
-    }
-    
-    public var remoteTable: String? {
-        nil
-    }
-    
-    public var remoteKey: String? {
-        nil
-    }
-    
-    public var keyName: String? {
-        nil
-    }
-    
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
-    }
-    public var value: Any? {
-        dataFormat.string(from:self)
-    }
-    
-    public var path: AnyKeyPath? {
-        nil
-    }
-    public static func traslate(value:String)->Date?{
-        dataFormat.date(from: value)
-    }
-}
-let dataFormat:DateFormatter = {
-    let fmt = DateFormatter()
-    fmt.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-    return fmt
-}()
-extension Optional:SqlType where Wrapped:SqlType {
-    public var path: AnyKeyPath? {
-        return nil
-    }
-    public var value: Any? {
-        self ?? nil
-    }
-    public static var sqlType: String {
-        Wrapped.sqlType.components(separatedBy: " ").first!
-    }
-    
-    public var sqlType: String {
-        Wrapped.sqlType.components(separatedBy: " ").first!
-    }
-    public var primaryKey: Bool {
-        return false
-    }
-    public var remoteTable: String? {
-        return nil
-    }
-    
-    public var remoteKey: String? {
-        return nil
-    }
-    public var keyName: String? {
-        return nil
-    }
-    public var onDelete: ForeignKeyAction? {
-        nil
-    }
-    
-    public var onUpdate: ForeignKeyAction? {
-        nil
-    }
-}
+extension Double:OriginValue {
 
+    public var sqlType:String{
+        return "REAL NOT NULL"
+    }
+    public static var sqlType:String{
+        return "REAL NOT NULL"
+    }
+}
+extension Float:OriginValue {
+    public var sqlType:String{
+        return "REAL NOT NULL"
+    }
+    public static var sqlType:String{
+        return "REAL NOT NULL"
+    }
+}
 @propertyWrapper
-public struct Unique<T:SqlType>:SqlType{
+public struct Unique<T:SqlType>:SqlType,CustomDebugStringConvertible{
+    public var debugDescription: String{
+        "\(wrappedValue)"
+    }
+    
     public var path: AnyKeyPath? {
         return wrappedValue.path
     }
-    public var value: Any? {
+    public var value: OriginValue? {
         wrappedValue.value
     }
     public var sqlType: String{
         wrappedValue.sqlType + " UNIQUE"
-    }
-    
-    public static var sqlType: String{
-        T.sqlType + " UNIQUE"
     }
     
     public var wrappedValue:T
@@ -466,19 +142,18 @@ public struct Unique<T:SqlType>:SqlType{
     }
 }
 @propertyWrapper
-public struct PrimaryKey<T:SqlType>:SqlType{
+public struct PrimaryKey<T:SqlType>:SqlType,CustomDebugStringConvertible{
+    public var debugDescription: String{
+        "\(wrappedValue)"
+    }
     public var path: AnyKeyPath? {
         return wrappedValue.path
     }
-    public var value: Any? {
+    public var value: OriginValue? {
         wrappedValue.value
     }
     public var sqlType: String{
         wrappedValue.sqlType
-    }
-    
-    public static var sqlType: String{
-        T.sqlType
     }
     
     public var wrappedValue:T
@@ -507,15 +182,15 @@ public struct PrimaryKey<T:SqlType>:SqlType{
     }
 }
 @propertyWrapper
-public struct Default<T:SqlType>:SqlType{
+public struct Default<T:SqlType>:SqlType,CustomDebugStringConvertible{
+    public var debugDescription: String{
+        "\(wrappedValue)"
+    }
     public var path: AnyKeyPath? {
         return wrappedValue.path
     }
-    public var value: Any? {
+    public var value: OriginValue? {
         wrappedValue.value
-    }
-    public static var sqlType: String{
-        T.sqlType
     }
     
     public var sqlType: String{
@@ -549,20 +224,21 @@ public struct Default<T:SqlType>:SqlType{
     }
 }
 @propertyWrapper
-public struct Key<T:SqlType>:SqlType{
+public struct Key<T:SqlType>:SqlType,CustomDebugStringConvertible{
+    public var debugDescription: String{
+        "\(wrappedValue)"
+    }
+    
     public var path: AnyKeyPath?{
         return wrappedValue.path
     }
-    public var value: Any? {
+    public var value: OriginValue? {
         wrappedValue.value
     }
     public var sqlType: String{
         wrappedValue.sqlType
     }
     
-    public static var sqlType: String{
-        T.sqlType
-    }
     
     public var wrappedValue:T
     public init(wrappedValue:T,_ name:String){
@@ -589,18 +265,18 @@ public struct Key<T:SqlType>:SqlType{
     }
 }
 @propertyWrapper
-public struct ValuePath<T:SqlType>:SqlType{
+public struct Column<T:OriginValue>:SqlType,CustomDebugStringConvertible{
+    public var debugDescription: String{
+        "\(wrappedValue)"
+    }
     public var path: AnyKeyPath?
-    public var value: Any? {
-        wrappedValue.value
+    public var value: OriginValue? {
+        return self.wrappedValue
     }
     public var sqlType: String{
         wrappedValue.sqlType
     }
     
-    public static var sqlType: String{
-        T.sqlType
-    }
     
     public var wrappedValue:T
     public init(wrappedValue:T,_ keyPath:AnyKeyPath){
@@ -608,24 +284,64 @@ public struct ValuePath<T:SqlType>:SqlType{
         self.path = keyPath
     }
     public var primaryKey: Bool {
-        wrappedValue.primaryKey
+        false
     }
     public var remoteTable: String? {
-        return wrappedValue.remoteTable
+        nil
     }
     
     public var remoteKey: String? {
-        return wrappedValue.remoteKey
+        nil
     }
     public var keyName: String?{
-        return wrappedValue.keyName
+        nil
     }
     public var onDelete: ForeignKeyAction? {
-        wrappedValue.onDelete
+        nil
     }
     
     public var onUpdate: ForeignKeyAction? {
-        wrappedValue.onUpdate
+        nil
+    }
+}
+@propertyWrapper
+public struct NullableColumn<T:OriginValue>:SqlType,CustomDebugStringConvertible{
+    public var debugDescription: String{
+        "\(String(describing: wrappedValue))"
+    }
+    public var path: AnyKeyPath?
+    public var value: OriginValue? {
+        wrappedValue
+    }
+    public var sqlType: String{
+        (wrappedValue?.sqlType ?? T.sqlType).components(separatedBy: " ").first!
+    }
+    
+    
+    public var wrappedValue:T?
+    public init(wrappedValue:T?,_ keyPath:AnyKeyPath){
+        self.wrappedValue = wrappedValue
+        self.path = keyPath
+    }
+    public var primaryKey: Bool {
+        false
+    }
+    public var remoteTable: String? {
+        nil
+    }
+    
+    public var remoteKey: String? {
+        nil
+    }
+    public var keyName: String?{
+        nil
+    }
+    public var onDelete: ForeignKeyAction? {
+        nil
+    }
+    
+    public var onUpdate: ForeignKeyAction? {
+        nil
     }
 }
 
@@ -635,15 +351,11 @@ public struct ForeignKey<T:SqlType>:SqlType{
     public var path: AnyKeyPath? {
         return wrappedValue.path
     }
-    public var value: Any? {
+    public var value: OriginValue? {
         wrappedValue.value
     }
     public var sqlType: String{
         wrappedValue.sqlType
-    }
-    
-    public static var sqlType: String{
-        T.sqlType
     }
     
     public var wrappedValue:T
@@ -677,20 +389,10 @@ public struct ForeignKey<T:SqlType>:SqlType{
 extension SQLCode{
     
     private var columnMap:[(label:String,value:SqlType)]{
-        if Self.explictKey{
-            return Mirror(reflecting: self).children.filter({$0.value is SqlType && $0.label != nil}).map { i in
-                let label = i.label!
-                let lab = label.starts(with: "_") ? String(label[label.index(after: label.startIndex) ..< label.endIndex]) : label
-                return (label:lab,value:i.value as! SqlType)
-            }.filter { i in
-                i.value.keyName != nil
-            }
-        }else{
-            return Mirror(reflecting: self).children.filter({$0.value is SqlType}).map { i in
-                let label = i.label!
-                let lab = label.starts(with: "_") ? String(label[label.index(after: label.startIndex) ..< label.endIndex]) : label
-                return (label:lab,value:i.value as! SqlType)
-            }
+        return Mirror(reflecting: self).children.filter({$0.value is SqlType}).map { i in
+            let label = i.label!
+            let lab = label.starts(with: "_") ? String(label[label.index(after: label.startIndex) ..< label.endIndex]) : label
+            return (label:lab,value:i.value as! SqlType)
         }
     }
     
@@ -742,6 +444,9 @@ extension SQLCode{
     public var normalKey:[(String,SqlType)] {
         self.columnMap.filter({$0.value.value != nil})
     }
+    public var fullKey:[(String,SqlType)] {
+        self.columnMap.map({($0.label,$0.value)})
+    }
     public static func insertKeyCode(_ i: (String, SqlType)) -> String {
         if i.1.value is Data{
             return "@\(i.0)"
@@ -760,11 +465,11 @@ extension SQLCode{
     var insert:String{
         let key = self.normalKey.map({$0.1.keyName ?? $0.0}).joined(separator: ",")
         
-        return "INSERT INTO \(Self.tableName) (\(key)) values(\(self.allValueKey))"
+        return "INSERT INTO `\(Self.tableName)` (\(key)) values(\(self.allValueKey))"
     }
     var bindMap:[String:SqlType]{
-        self.normalKey.filter { i in
-            i.1.value != nil && (i.1.value is Data || i.1.value is String)
+        self.fullKey.filter { i in
+            i.1.value == nil || (i.1.value is Data || i.1.value is String)
         }.reduce(into: [:]) { r, i in
             r[i.0] = i.1
         }
@@ -774,23 +479,23 @@ extension SQLCode{
         self.doBind(resultSet: result)
         try result.step()
     }
-    public static func updateSetKeyCode(_ i: (String, SqlType)) -> String {
+    public static func updateSetKeyCode(_ i: (String, SqlType)) -> String? {
         let key = i.1.keyName ?? i.0
         if i.1.value is Data{
             return "\(key) = @\(i.0)"
         }else if i.1.value is String{
             return "\(key) = @\(i.0)"
+        }else if i.1.value == nil{
+            return "\(key) = @\(i.0)"
         }else{
-            return "\(key) = \(i.1.value!)"
+            return nil
         }
     }
     
     var update:String{
-        let value = self.normalKey.filter({ i in
-            i.1.primaryKey == false
-        }).map { i -> String in
+        let value = self.fullKey.map { i -> String? in
             return Self.updateSetKeyCode(i)
-        }.joined(separator: ",")
+        }.compactMap({$0}).joined(separator: ",")
         if self.primaryKey.count == 0{
             return ""
         }else{
@@ -848,6 +553,8 @@ extension SQLCode{
                 resultSet.bind(name: "@"+i.key)?.bind(value: i.value.value as! String)
             }else if i.value.value is Data{
                 resultSet.bind(name: "@"+i.key)?.bind(value: i.value.value as! Data)
+            }else if i.value.value == nil {
+                resultSet.bindNull(name: "@"+i.key)
             }
         }
     }

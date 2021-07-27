@@ -10,6 +10,66 @@ import XCTest
 
 class AlphaTests: XCTestCase {
 
+    struct model:SQLCode{
+        static var tableName: String = "model"
+        
+        @PrimaryKey
+        @Column(\model.a)
+        var a:Int = 0
+        
+        @Key("b_key")
+        @Column(\model.b)
+        var b:String = ""
+        
+        @Column(\model.c)
+        var c:Data = Data()
+        
+        @Default("3.14")
+        @Column(\model.d)
+        var d:Double = 0.0
+        
+        @Column(\model.f)
+        var f:Int32 = 0
+        
+        @Column(\model.g)
+        var g:Int64 = 0
+        
+    
+        @NullableColumn(\model.oa)
+        var oa:Int? = nil
+        
+        @Key("ob_key")
+        @NullableColumn(\model.ob)
+        var ob:String? = nil
+        
+        @NullableColumn(\model.oc)
+        var oc:Data? = nil
+        
+        @NullableColumn(\model.od)
+        var od:Double? = nil
+
+        @NullableColumn(\model.of)
+        var of:Int32? = 0
+        
+        @NullableColumn(\model.og)
+        var og:Int64? = 1
+    }
+    struct model2:SQLCode{
+        static var tableName: String = "model2"
+        
+        @PrimaryKey
+        @Key("Identify")
+        @Column(\model2.a2)
+        var a2:Int = 0
+        
+        
+        @ForeignKey(remoteTable: "model", remoteKey: "a", onDelete: .SET_DEFAULT, onUpdate: .CASCADE)
+        @Default("0")
+        @Key("IdentifyRef")
+        @Column(\model2.a)
+        var a:Int = 0
+        
+    }
     func data(name:String)throws ->Database{
         try Database(url: Env.home().appendingPathComponent(name))
     }
@@ -86,54 +146,18 @@ class AlphaTests: XCTestCase {
         try db.exec(sql: "drop table sds;drop table pp;")
     }
     func testCreateTableByModel() throws {
-        struct model:SQLCode{
-            static var tableName: String = "model"
-            
-            static var explictKey: Bool = false
-            
-            @PrimaryKey
-            @ValuePath(\model.a)
-            var a:Int = 0
-            
-            @Key("b_key")
-            @ValuePath(\model.b)
-            var b:String = ""
-            
-            @ValuePath(\model.c)
-            var c:Data = Data()
-            
-            
-            
-            
-            @ValuePath(\model.d)
-            @Default("3.14")
-            var d:Double = 0.0
-            
-            @ValuePath(\model.f)
-            var f:Date = Date()
-        }
-        struct model2:SQLCode{
-            static var tableName: String = "model2"
-            
-            static var explictKey: Bool = false
-            
-            @PrimaryKey
-            @ValuePath(\model2.a2)
-            var a2:Int = 0
-            
-            
-            @ForeignKey(remoteTable: "model", remoteKey: "a", onDelete: .SET_DEFAULT, onUpdate: .CASCADE)
-            @Default("0")
-            @ValuePath(\model2.a)
-            var a:Int = 0
-            
-        }
+        
         let dm = try self.data(name: "data")
         dm.foreignKey = true
+        try dm.drop(modelType: model2.self)
+        try dm.drop(modelType: model.self)
         try dm.create(obj: model())
         try dm.create(obj: model2())
         for i in 0 ..< 10 {
-            try dm.insert(model: model(a: i, b: "ddd\(i)", c: "dd\(i * 2)".data(using: .utf8)!, d: 0.9 + Double(i),f:  Date(timeIntervalSince1970: 3600 + Double(i))))
+            try dm.insert(model: model(a: i,
+                                       b: "ddd\(i)",
+                                       c: "dd\(i * 2)".data(using: .utf8)!
+                                       , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
         }
         for i in 0 ..< 10 {
             do {
@@ -155,16 +179,60 @@ class AlphaTests: XCTestCase {
         
         XCTAssert(f, "table foreign keu constaint fail")
         let r = try dm.select(request: FetchRequest(table: model.self))
+        print(r)
         for i in 0..<10 {
             XCTAssert(r[i].a == i,"\(r[i].a)")
             XCTAssert(r[i].b == "ddd\(i)",r[i].b)
             XCTAssert(String(data: r[i].c, encoding: .utf8)! == "dd\(i * 2)",String(data: r[i].c, encoding: .utf8)!)
             XCTAssert(r[i].d == 0.9 + Double(i),"\(r[i].d )")
-            XCTAssert(r[i].f.timeIntervalSince1970 == 3600 + Double(i),"\(r[i].f.timeIntervalSince1970)")
+            XCTAssert(r[i].f == 0)
+            XCTAssert(r[i].g == 0)
+            XCTAssert(r[i].oa == i + 1)
+            XCTAssert(r[i].ob == "")
+            XCTAssert(r[i].oc?.count == 0)
+            XCTAssert(r[i].od == 0.0)
+            XCTAssert(r[i].of! == 10 - i)
+            XCTAssert(r[i].og == 1)
         }
+        let r2 = try dm.select(request: FetchRequest(table: model2.self))
+        for i in 0..<10 {
+            XCTAssert(r2[i].a == i)
+            XCTAssert(r2[i].a2 == i)
+        }
+        var up = r[0]
+        up.og = nil
+        up.oc = "abc".data(using: .utf8)
+        up.ob = "abc"
+        try dm.update(model: up)
+        let rr = try dm.select(model: model(a: 0))
+        XCTAssert(rr != nil)
+        XCTAssert(rr?.og == 0)
+//        XCTAssert(rr[0].a == 100)
         
-//        try dm.drop(modelType: model2.self)
-//        try dm.drop(modelType: model.self)
+        
+        XCTAssert(String(data: rr!.oc!, encoding: .utf8)! == "abc")
+        XCTAssert(rr?.ob == "abc")
+        dm.close()
+    }
+    func testSelect() throws{
+        let dm = try self.data(name: "data")
+        dm.foreignKey = true
+        try dm.drop(modelType: model2.self)
+        try dm.drop(modelType: model.self)
+        try dm.create(obj: model())
+        try dm.create(obj: model2())
+        for i in 0 ..< 100 {
+            try dm.insert(model: model(a: i,
+                                       b: "ddd\(i)",
+                                       c: "dd\(i * 2)".data(using: .utf8)!
+                                       , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
+        }
+        let request = FetchRequest(table: model.self, condition: ConditionKey("a") < "90" && ConditionKey("a") > "10", page: Page(offset: 10, limit: 20), order: [.desc("a")])
+        let r = try dm.select(request: request)
+        for i in 0 ..< r.count {
+            XCTAssert(r[i].a == 79 - i)
+        }
+        dm.close()
     }
 }
 public class Env{

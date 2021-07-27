@@ -28,42 +28,39 @@ public class FetchRequest<T:SQLCode>{
     public var sql:String
     public var keyMap:[String:SqlType] = [:]
     public init(table:T.Type,condition:Condition? = nil ,page:Page? = nil,order:[Order] = []){
-        self.sql = "select * from `\(T.tableName)`" + ((condition?.conditionCode.count ?? 0) > 0 ? ("where" + condition!.conditionCode) : "") + (order.count > 0 ? "order by" + order.map({$0.code}).joined(separator: ",") : "") + (page == nil ? "" : "OFFSET \(page!.offset) LIMIT \(page!.limit)")
+        self.sql = "select * from `\(T.tableName)`" + ((condition?.conditionCode.count ?? 0) > 0 ? (" where " + condition!.conditionCode) : "") + (order.count > 0 ? " order by" + order.map({$0.code}).joined(separator: ",") : "") + (page == nil ? "" : " LIMIT \(page!.limit) OFFSET \(page!.offset)")
+    }
+    public init(obj:SQLCode){
+        self.sql = "select * from `\(T.tableName)` where " + obj.primaryCondition
     }
     public func loadKeyMap(map:[String:SqlType]){
         self.keyMap = map
     }
     func doSelectBind(result:Database.ResultSet){
         for i in keyMap {
-            if i.value is Int{
-                result.bind(name: i.key)?.bind(value: i.value as! Int)
+            if i.value.value is Int{
+                result.bind(name: i.key)?.bind(value: i.value.value as! Int)
             }
-            if i.value is Int8{
-                result.bind(name: i.key)?.bind(value: i.value as! Int8)
+            if i.value.value is Int32{
+                result.bind(name: i.key)?.bind(value: i.value.value as! Int32)
             }
-            if i.value is Int32{
-                result.bind(name: i.key)?.bind(value: i.value as! Int32)
+            if i.value.value is Int64{
+                result.bind(name: i.key)?.bind(value: i.value.value as! Int64)
             }
-            if i.value is Int64{
-                result.bind(name: i.key)?.bind(value: i.value as! Int64)
+            if i.value.value is Int{
+                result.bind(name: i.key)?.bind(value: i.value.value as! Int)
             }
-            if i.value is Int{
-                result.bind(name: i.key)?.bind(value: i.value as! Int)
+            if i.value.value is Double{
+                result.bind(name: i.key)?.bind(value: i.value.value as! Double)
             }
-            if i.value is Double{
-                result.bind(name: i.key)?.bind(value: i.value as! Double)
+            if i.value.value is Float{
+                result.bind(name: i.key)?.bind(value: i.value.value as! Float)
             }
-            if i.value is Float{
-                result.bind(name: i.key)?.bind(value: i.value as! Float)
+            if i.value.value is Data{
+                result.bind(name: i.key)?.bind(value: i.value.value as! Data)
             }
-            if i.value is Data{
-                result.bind(name: i.key)?.bind(value: i.value as! Data)
-            }
-            if i.value is String{
-                result.bind(name: i.key)?.bind(value: i.value as! String)
-            }
-            if i.value is Date{
-                result.bind(name: i.key)?.bind(value: i.value as! String)
+            if i.value.value is String{
+                result.bind(name: i.key)?.bind(value: i.value.value as! String)
             }
         }
     }
@@ -76,19 +73,17 @@ public class FetchRequest<T:SQLCode>{
     }
     static public func load(result:Database.ResultSet)->T{
         var sql = T.init()
-        let nk = sql.normalKey
-        let nkm = sql.normalKey.reduce(into: [:]) { r, i in
+        let nkm = sql.fullKey.reduce(into: [:]) { r, i in
             r[i.1.keyName ?? i.0] = i
         }
-        let c = nk.count
+        let c = result.columnCount
         for i in 0 ..< c{
             
             guard let sqlv = nkm[result.columnName(index: i)]?.1 else { continue }
             let vt = sqlv.value
- 
             guard let kp = sqlv.path else { continue }
             
-            if vt is Int{
+            if vt is Int || vt is Optional<Int>{
                 let v = result.column(index:Int32(i), type: Int.self).value()
 
                 if let keyPath = kp as? WritableKeyPath<T,Int?>{
@@ -96,11 +91,9 @@ public class FetchRequest<T:SQLCode>{
                 }
                 if let keyPath = kp as? WritableKeyPath<T,Int>{
                     sql[keyPath: keyPath] = v
-
                 }
-                
             }
-            if vt is Int32{
+            if vt is Int32 || vt is Optional<Int32>{
                 let v = result.column(index:Int32(i), type: Int32.self).value()
 
                 if let keyPath = kp as? WritableKeyPath<T,Int32?>{
@@ -111,7 +104,7 @@ public class FetchRequest<T:SQLCode>{
 
                 }
             }
-            if vt is Int64{
+            if vt is Int64 || vt is Optional<Int64>{
                 let v = result.column(index:Int32(i), type: Int64.self).value()
      
                 if let keyPath = kp as? WritableKeyPath<T,Int64?>{
@@ -123,7 +116,7 @@ public class FetchRequest<T:SQLCode>{
 
                 }
             }
-            if vt is Data{
+            if vt is Data || vt is Optional<Data> {
                 let v = result.column(index:Int32(i), type: Data.self).value()
    
                 if let keyPath = kp as? ReferenceWritableKeyPath<T,Data?>{
@@ -143,7 +136,7 @@ public class FetchRequest<T:SQLCode>{
 
                 }
             }
-            if vt is String{
+            if vt is String || vt is Optional<String>{
                 let v = result.column(index:Int32(i), type: String.self).value()
 
                 if let keyPath = kp as? ReferenceWritableKeyPath<T,String?>{
@@ -161,27 +154,8 @@ public class FetchRequest<T:SQLCode>{
                     sql[keyPath: keyPath] = v
                 }
             }
-            if vt is Date{
-                let v = result.column(index:Int32(i), type: String.self).value()
 
-                if let keyPath = kp as? ReferenceWritableKeyPath<T,Date?>{
-                    sql[keyPath: keyPath] = Date.traslate(value: v)
-
-                }
-                if let keyPath = kp as? ReferenceWritableKeyPath<T,Date>{
-                    sql[keyPath: keyPath] = Date.traslate(value: v) ?? Date(timeIntervalSince1970: 0)
-
-                }
-                if let keyPath = kp as? WritableKeyPath<T,Date?>{
-                    sql[keyPath: keyPath] = Date.traslate(value: v)
-
-                }
-                if let keyPath = kp as? WritableKeyPath<T,Date>{
-                    sql[keyPath: keyPath] = Date.traslate(value: v) ?? Date(timeIntervalSince1970: 0)
-
-                }
-            }
-            if vt is Double{
+            if vt is Double || vt is Optional<Double>{
                 let v = result.column(index:Int32(i), type: Double.self).value()
 
                 if let keyPath = kp as? WritableKeyPath<T,Double?>{
@@ -193,7 +167,7 @@ public class FetchRequest<T:SQLCode>{
            
                 }
             }
-            if vt is Float{
+            if vt is Float || vt is Optional<Float>{
                 let v = result.column(index:Int32(i), type: Float.self).value()
 
                 if let keyPath = kp as? WritableKeyPath<T,Float?>{
@@ -203,18 +177,6 @@ public class FetchRequest<T:SQLCode>{
                 if let keyPath = kp as? WritableKeyPath<T,Float>{
                     sql[keyPath: keyPath] = v
 
-                }
-            }
-            if vt is Int8{
-                let v = result.column(index:Int32(i), type: Int8.self).value()
-         
-                if let keyPath = kp as? WritableKeyPath<T,Int8?>{
-                    sql[keyPath: keyPath] = v
-      
-                }
-                if let keyPath = kp as? WritableKeyPath<T,Int8>{
-                    sql[keyPath: keyPath] = v
-    
                 }
             }
         }
