@@ -439,7 +439,7 @@ extension Database{
         try self.exec(sql: "COMMIT;")
     }
     public func begin() throws {
-        try self.exec(sql: "BEGIN TRANSACTION;")
+        try self.exec(sql: "BEGIN;")
     }
     public func close(){
         sqlite3_close(self.sqlite)
