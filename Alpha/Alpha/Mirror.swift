@@ -489,7 +489,7 @@ extension SQLCode{
         }else if i.2 == nil{
             return "\(key) = @\(i.1)"
         }else{
-            return nil
+            return "\(key) = \(i.2!)"
         }
     }
     

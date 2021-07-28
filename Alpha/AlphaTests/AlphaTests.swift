@@ -166,7 +166,6 @@ class AlphaTests: XCTestCase {
                 
                 var i:Int = 0
             }
-            db.foreignKey = true
             try db.drop(modelType: model2.self)
             try db.drop(modelType: model.self)
             try db.drop(modelType: model3.self)
@@ -192,7 +191,7 @@ class AlphaTests: XCTestCase {
             }
             var f = false
             do {
-                try db.insert(model: model2(a2: 100, a:100))
+                try db.insert(model: model2(a2: 10000, a:10000))
             } catch  {
                 f = true
             }
@@ -227,8 +226,6 @@ class AlphaTests: XCTestCase {
             let rr = try db.select(model: model(a: 0))
             XCTAssert(rr != nil)
             XCTAssert(rr?.og == nil)
-    //        XCTAssert(rr[0].a == 100)
-            
             
             XCTAssert(String(data: rr!.oc!, encoding: .utf8)! == "abc")
             XCTAssert(rr?.ob == "abc")
@@ -239,9 +236,6 @@ class AlphaTests: XCTestCase {
     }
     func testSelect() throws{
         self.pool.write { db in
-            if (db.foreignKey == false){
-                db.foreignKey = true
-            }
             try db.drop(modelType: model2.self)
             try db.drop(modelType: model.self)
             try db.create(obj: model())
@@ -299,7 +293,26 @@ class AlphaTests: XCTestCase {
     }
     func testRollback() throws {
         self.pool.write { db in
-            
+            try db.drop(modelType: model2.self)
+            try db.drop(modelType: model.self)
+            try db.create(obj: model())
+            try db.create(obj: model2())
+            for i in 0 ..< 10000 {
+                try db.insert(model: model(a: i,
+                                           b: "ddd\(i)",
+                                           c: "dd\(i * 2)".data(using: .utf8)!
+                                           , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
+            }
+        }
+        self.pool.writeSync { db in
+            try db.update(model: ["oa":100], table: model.self, condition: ConditionKey(key: "a") == "0")
+            throw NSError(domain: "test rollback", code: 0, userInfo: nil)
+        }
+        self.pool.writeSync { db in
+            let m = model(a:0)
+            let new = try db.select(model: m)
+            XCTAssert(new?.oa == 1)
+            print(db.url)
         }
     }
 }

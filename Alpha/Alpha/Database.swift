@@ -8,15 +8,6 @@
 import Foundation
 import SQLite3
 
-public enum JournalMode:String{
-    case DELETE
-    case TRUNCATE
-    case PERSIST
-    case MEMORY
-    case WAL
-    case OFF
-}
-
 public class Database:Hashable{
     public static func == (lhs: Database, rhs: Database) -> Bool {
         lhs.hashValue == rhs.hashValue
@@ -34,7 +25,6 @@ public class Database:Hashable{
         if(self.sqlite == nil){
             throw NSError(domain: "create sqlite3 fail", code: 0, userInfo: ["url":url])
         }
-        try self.setJournalMode(mode: .WAL)
     }
     deinit {
         sqlite3_close(self.sqlite)
@@ -248,9 +238,12 @@ public class DataBasePool{
     private var timer:Timer?
     public init(name:String) throws {
         let url = try DataBasePool.checkDir().appendingPathComponent(name)
+        let back = try DataBasePool.checkBackUpDir().appendingPathComponent(name)
         self.dbName = name
-        if(!FileManager.default.fileExists(atPath: url.path)){
+        if !FileManager.default.fileExists(atPath: url.path) && !FileManager.default.fileExists(atPath: back.path){
             FileManager.default.createFile(atPath: url.path, contents: nil, attributes: nil)
+        }else if !FileManager.default.fileExists(atPath: url.path){
+            try? DataBasePool.restore(name: name)
         }
         self.wdb = try Database(url: url)
         self.url = url
@@ -273,6 +266,7 @@ public class DataBasePool{
                 }
                 
                 let db = try self.createReadOnly()
+                db.foreignKey = true
                 try callback(db)
                 self.read.append(element: db)
             }catch{
@@ -290,6 +284,7 @@ public class DataBasePool{
                 }
                 
                 let db = try self.createReadOnly()
+                db.foreignKey = true
                 try callback(db)
                 self.read.append(element: db)
             }catch{
@@ -301,11 +296,13 @@ public class DataBasePool{
         self.queue.sync(execute: DispatchWorkItem(flags: .barrier, block: {
             let db = self.wdb
             do {
+                db.foreignKey = true
+                try db.begin()
                 try callback(db)
-                db.commit()
+                try db.commit()
             }catch{
                 print(error)
-                db.rollback()
+                try? db.rollback()
             }
         }))
     }
@@ -320,11 +317,14 @@ public class DataBasePool{
         self.queue.async(execute: DispatchWorkItem(flags: .barrier, block: {
             let db = self.wdb
             do {
+                db.foreignKey = true
+                print(db.foreignKey)
+                try db.begin()
                 try callback(db)
-                db.commit()
+                try db.commit()
             }catch{
                 print(error)
-                db.rollback()
+                try? db.rollback()
             }
         }))
     }
@@ -432,11 +432,14 @@ extension Database{
             call.call(call,i,ret?.pointee)
         }, nil, nil)
     }
-    public func rollback(){
-        sqlite3_rollback_hook(sqlite, nil, nil)
+    public func rollback() throws{
+        try self.exec(sql: "rollback")
     }
-    public func commit(){
-        sqlite3_commit_hook(self.sqlite, nil, nil)
+    public func commit() throws {
+        try self.exec(sql: "commit")
+    }
+    public func begin() throws {
+        try self.exec(sql: "begin")
     }
     public func close(){
         sqlite3_close(self.sqlite)
@@ -556,7 +559,7 @@ extension Database{
     public func update<T:SQLCode>(model:T) throws {
         try model.doUpdate(db: self)
     }
-    public func update<T:SQLCode>(model:[String:OriginValue?],table:T.Type,condition:Condition,bind:[String:OriginValue]) throws {
+    public func update<T:SQLCode>(model:[String:OriginValue?],table:T.Type,condition:Condition,bind:[String:OriginValue] = [:]) throws {
         let kv = model.map { i in
             T.updateSetKeyCode((i.key,i.key,i.value))
         }.compactMap({$0}).joined(separator: ",")
@@ -621,8 +624,5 @@ extension Database{
     }
     public func drop<T:SQLCode>(modelType:T.Type) throws{
         try self.exec(sql: "drop table if exists `\(T.tableName)`")
-    }
-    public func setJournalMode(mode:JournalMode) throws{
-        try self.exec(sql: "PRAGMA journal_mode = " + mode.rawValue)
     }
 }
