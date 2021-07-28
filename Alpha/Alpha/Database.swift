@@ -433,13 +433,13 @@ extension Database{
         }, nil, nil)
     }
     public func rollback() throws{
-        try self.exec(sql: "rollback")
+        try self.exec(sql: "ROLLBACK;")
     }
     public func commit() throws {
-        try self.exec(sql: "commit")
+        try self.exec(sql: "COMMIT;")
     }
     public func begin() throws {
-        try self.exec(sql: "begin")
+        try self.exec(sql: "BEGIN TRANSACTION;")
     }
     public func close(){
         sqlite3_close(self.sqlite)
