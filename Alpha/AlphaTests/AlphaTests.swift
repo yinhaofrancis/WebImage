@@ -18,6 +18,7 @@ class AlphaTests: XCTestCase {
         var a:Int = 0
         
         @Key("b_key")
+        @Unique
         @Column(\model.b)
         var b:String = ""
         
@@ -68,6 +69,10 @@ class AlphaTests: XCTestCase {
         @Key("IdentifyRef")
         @Column(\model2.a)
         var a:Int = 0
+        
+        @ForeignKey(remoteTable: "model", remoteKey: "b_key", onDelete: .NO_ACTION, onUpdate: .NO_ACTION)
+        @Column(\model2.b)
+        var b:String = ""
         
     }
     func data(name:String)throws ->Database{
@@ -146,13 +151,21 @@ class AlphaTests: XCTestCase {
         try db.exec(sql: "drop table sds;drop table pp;")
     }
     func testCreateTableByModel() throws {
+        struct model3:SQLCode{
+            static var tableName: String =  "model3"
+            
         
+            
+            var i:Int = 0
+        }
         let dm = try self.data(name: "data")
         dm.foreignKey = true
         try dm.drop(modelType: model2.self)
         try dm.drop(modelType: model.self)
+        try dm.drop(modelType: model3.self)
         try dm.create(obj: model())
         try dm.create(obj: model2())
+        try dm.create(obj: model3())
         for i in 0 ..< 10 {
             try dm.insert(model: model(a: i,
                                        b: "ddd\(i)",
@@ -168,7 +181,7 @@ class AlphaTests: XCTestCase {
             XCTAssert(false, "table primary constaint fail")
         }
         for i in 0 ..< 10 {
-            try dm.insert(model: model2(a2: i, a: i))
+            try dm.insert(model: model2(a2: i, a: i,b: "ddd\(i)"))
         }
         var f = false
         do {
@@ -188,9 +201,9 @@ class AlphaTests: XCTestCase {
             XCTAssert(r[i].f == 0)
             XCTAssert(r[i].g == 0)
             XCTAssert(r[i].oa == i + 1)
-            XCTAssert(r[i].ob == "")
-            XCTAssert(r[i].oc?.count == 0)
-            XCTAssert(r[i].od == 0.0)
+            XCTAssert(r[i].ob == nil)
+            XCTAssert(r[i].oc == nil)
+            XCTAssert(r[i].od == nil)
             XCTAssert(r[i].of! == 10 - i)
             XCTAssert(r[i].og == 1)
         }
@@ -206,7 +219,7 @@ class AlphaTests: XCTestCase {
         try dm.update(model: up)
         let rr = try dm.select(model: model(a: 0))
         XCTAssert(rr != nil)
-        XCTAssert(rr?.og == 0)
+        XCTAssert(rr?.og == nil)
 //        XCTAssert(rr[0].a == 100)
         
         
@@ -216,7 +229,9 @@ class AlphaTests: XCTestCase {
     }
     func testSelect() throws{
         let dm = try self.data(name: "data")
-        dm.foreignKey = true
+        if (dm.foreignKey == false){
+            dm.foreignKey = true
+        }
         try dm.drop(modelType: model2.self)
         try dm.drop(modelType: model.self)
         try dm.create(obj: model())
@@ -227,10 +242,31 @@ class AlphaTests: XCTestCase {
                                        c: "dd\(i * 2)".data(using: .utf8)!
                                        , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
         }
-        let request = FetchRequest(table: model.self, condition: ConditionKey("a") < "90" && ConditionKey("a") > "10", page: Page(offset: 10, limit: 20), order: [.desc("a")])
+        let request = FetchRequest(table: model.self, condition: ConditionKey("a") < "@ktop" && ConditionKey("a") > "@kbottom", page: Page(offset: 10, limit: 20), order: [.desc("a")])
+        request.loadKeyMap(map: ["kbottom":"10","ktop":"90"])
         let r = try dm.select(request: request)
         for i in 0 ..< r.count {
             XCTAssert(r[i].a == 79 - i)
+        }
+        var noExist = r[0]
+        noExist.a = -1000
+        XCTAssert(try dm.exists(model: r[0]))
+        XCTAssert(try !dm.exists(model: noExist))
+        XCTAssert(try dm.count(model: model.self) == 100)
+        XCTAssert(try dm.select(type: model.self, key: .max("a"))?.b == "ddd99")
+        XCTAssert(try dm.select(type: model.self, key: .min("a"))?.b == "ddd0")
+        try dm.delete(model: r[0])
+        XCTAssertNil(try dm.select(model: r[0]))
+        try dm.delete(table: model.self, condition: Condition.like(lk: "b_key", rk: "@linl"), bind: ["linl":"ddd1%"])
+        let cc = try dm.count(model: model.self)
+        XCTAssert(cc == 88)
+        try dm.update(model: ["c":"sdsds".data(using: .utf8)!], table: model.self, condition: Condition.like(lk: "b_key", rk: "@linl"), bind: ["linl":"ddd2%"])
+        let datas = try dm.select(request: FetchRequest(table: model.self, key: .all, condition: Condition.like(lk: "b_key", rk: "@linl")).loadKeyMap(map: ["linl":"ddd2%"]))
+        for i in datas {
+            XCTAssert("sdsds" == String(data: i.c, encoding: .utf8))
+        }
+        try dm.dataMaster(type: "table").map({$0.name}).forEach { i in
+            print(try dm.integrityCheck(table: i))
         }
         dm.close()
     }

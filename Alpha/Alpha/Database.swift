@@ -18,7 +18,6 @@ public class Database:Hashable{
     }
     public let url:URL
     public var sqlite:OpaquePointer?
-    public var functions:Array<ScalarFunction> = Array()
     public init(url:URL,readOnly:Bool = false) throws{
         self.url = url
         let r = readOnly ? SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX  : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX)
@@ -29,116 +28,6 @@ public class Database:Hashable{
     }
     deinit {
         sqlite3_close(self.sqlite)
-    }
-    public class ScalarFunction{
-        public let name:String
-        public let nArg:Int32
-        public var ctx:OpaquePointer?
-        public let call:(ScalarFunction,Int32,OpaquePointer?)->Void
-        public init(name:String,nArg:Int32,handle:@escaping (ScalarFunction,Int32,OpaquePointer?)->Void) {
-            self.name = name
-            self.nArg = nArg
-            self.call = handle
-        }
-        public func ret(v:Int){
-            guard let c = ctx else {
-                return
-            }
-            if MemoryLayout.size(ofValue: v) == 4{
-                sqlite3_result_int(c, Int32(v))
-            }else{
-                sqlite3_result_int64(c, Int64(v))
-            }
-            
-        }
-        public func ret(v:Int32){
-            guard let c = ctx else {
-                return
-            }
-            sqlite3_result_int(c, Int32(v))
-        }
-        public func ret(v:Int64){
-            guard let c = ctx else {
-                return
-            }
-            sqlite3_result_int64(c, Int64(v))
-        }
-        public func ret(v:String){
-            guard let sc = ctx else {
-                return
-            }
-            guard let c = v.cString(using: .utf8) else {
-                sqlite3_result_null(sc)
-                return
-            }
-            let p = UnsafeMutablePointer<CChar>.allocate(capacity: v.utf8.count)
-            memcpy(p, c, v.utf8.count)
-            sqlite3_result_text(sc, v.cString(using: .utf8), Int32(v.utf8.count)) { p in
-                p?.deallocate()
-            }
-        }
-        public func ret(v:Data){
-            guard let sc = ctx else {
-                return
-            }
-            let pointer = sqlite3_malloc(Int32(v.count))
-            let buffer = UnsafeMutableRawBufferPointer(start: pointer, count: v.count)
-            v.copyBytes(to: buffer, count: v.count)
-            sqlite3_result_blob(sc, pointer, Int32(v.count)) { p in
-                sqlite3_free(p)
-            }
-        }
-        public func ret(v:Float){
-            guard let sc = ctx else {
-                return
-            }
-            sqlite3_result_double(sc, Double(v))
-        }
-        public func ret(v:Double){
-            guard let sc = ctx else {
-                return
-            }
-            sqlite3_result_double(sc, v)
-        }
-        public func ret(){
-            guard let sc = ctx else {
-                return
-            }
-            sqlite3_result_null(sc)
-        }
-        public func ret(error:String,code:Int32){
-            guard let sc = ctx else {
-                return
-            }
-            sqlite3_result_error(sc, error, Int32(error.utf8.count))
-            sqlite3_result_error_code(sc, code)
-        }
-        public func value(value:OpaquePointer)->Int{
-            if MemoryLayout<Int>.size == 4{
-                return Int(sqlite3_value_int(value))
-            }else{
-                return Int(sqlite3_value_int64(value))
-            }
-        }
-        @available(iOS 12.0, *)
-        public func valueNoChange(value:OpaquePointer){
-            sqlite3_value_nochange(value)
-        }
-        public func value(value:OpaquePointer)->Int32{
-            return sqlite3_value_int(value)
-        }
-        public func value(value:OpaquePointer)->Int64{
-            return sqlite3_value_int64(value)
-        }
-        public func value(value:OpaquePointer)->Double{
-            return sqlite3_value_double(value)
-        }
-        public func value(value:OpaquePointer)->Float{
-            return Float(sqlite3_value_double(value))
-        }
-        public func value(value:OpaquePointer)->String{
-            return String(cString: sqlite3_value_text(value))
-        }
     }
     public class ResultSet{
         
@@ -175,23 +64,7 @@ public class Database:Hashable{
                 return false
             }
             
-            throw NSError(domain: String(cString: sqlite3_errmsg(self.db.sqlite!)), code: Int(rc), userInfo: ["sql":String(cString: sqlite3_sql(self.stmt))])
-        }
-        public func next() throws ->ResultSet?{
-            guard let sql = self.nextSql else {
-                return nil
-            }
-            return try self.db.query(sql: sql)
-        }
-        @discardableResult
-        public func finish()->ResultSet{
-            do {
-                try self.step()
-            } catch {
-                
-            }
-            self.close()
-            return self
+            throw NSError(domain: Database.errormsg(pointer: self.db.sqlite!), code: Int(rc), userInfo: ["sql":String(cString: sqlite3_sql(self.stmt))])
         }
         public func columnName(index:Int)->String{
             String(cString: sqlite3_column_name(self.stmt, Int32(index)))
@@ -482,6 +355,14 @@ public struct TableInfo{
     public let dlft_value:String
     public let pk:Int
 }
+public struct DataMasterInfo{
+    public let type:String
+    public let name:String
+    public let tblName:String
+    public let rootPage:Int
+    public let sql:String
+}
+
 public struct TableForeignKeyInfo{
     public let id:Int
     public let seq:Int
@@ -523,9 +404,9 @@ extension Database{
         let nextSql:UnsafeMutablePointer<UnsafePointer<CChar>?> = .allocate(capacity: 1)
         let rc = sqlite3_prepare(self.sqlite, sql, Int32(sql.utf8.count), &stmt, nextSql)
         if rc != SQLITE_OK{
-            throw NSError(domain: String(cString: sqlite3_errmsg(self.sqlite!)), code: Int(rc), userInfo: ["sql":sql])
+            throw NSError(domain:  Database.errormsg(pointer: self.sqlite!), code: Int(rc), userInfo: ["sql":sql])
         }
-        guard let s = stmt else { throw NSError(domain: String(cString: sqlite3_errmsg(self.sqlite!)), code: 0, userInfo: ["sql":sql])}
+        guard let s = stmt else { throw NSError(domain: Database.errormsg(pointer: self.sqlite!), code: 0, userInfo: ["sql":sql])}
         if let cs = nextSql.pointee{
             let nsql = String(cString: cs)
             nextSql.deallocate()
@@ -535,8 +416,6 @@ extension Database{
         }
     }
     public func addScalarFunction(function:ScalarFunction){
-    
-        self.functions.append(function)
         sqlite3_create_function(self.sqlite!, function.name, function.nArg, SQLITE_UTF8, Unmanaged.passUnretained(function).toOpaque(), { ctx, i, ret in
             let call = Unmanaged<ScalarFunction>.fromOpaque(sqlite3_user_data(ctx)).takeUnretainedValue()
             call.ctx = ctx
@@ -560,6 +439,21 @@ extension Database{
     public static func errormsg(pointer:OpaquePointer?)->String{
         String(cString: sqlite3_errmsg(pointer))
     }
+    public func dataMaster(type:String) throws->[DataMasterInfo]{
+        let re = try self.query(sql: "select * from sqlite_master where type=?")
+        re.bind(index: 1).bind(value: type)
+        var array:[DataMasterInfo] = []
+        while try re.step(){
+            let dmi = DataMasterInfo(type: re.column(index: 0, type: String.self).value(),
+                           name: re.column(index: 1, type: String.self).value(),
+                           tblName: re.column(index: 2, type: String.self).value(),
+                           rootPage: re.column(index: 3, type: Int.self).value(),
+                           sql: re.column(index: 4, type: String.self).value())
+            array.append(dmi)
+        }
+        re.close()
+        return array
+    }
     public func tableInfo(name:String) throws ->[String:TableInfo]{
         let r = try self.query(sql: "PRAGMA table_info(\(name))")
         var map:[String:TableInfo] = [:]
@@ -574,6 +468,7 @@ extension Database{
             map[tav.name] = tav
             
         }
+        r.close()
         return map
     }
     public func tableForeignKeyInfo(name:String) throws ->[String:TableForeignKeyInfo]{
@@ -591,13 +486,17 @@ extension Database{
                                           match: r.column(index: 7, type: String.self).value())
             map[tav.from] = tav
         }
+        r.close()
         return map
     }
     public func integrityCheck(table:String) throws ->Bool{
         let r = try self.query(sql: "PRAGMA INTEGRITY_CHECK(\(table))")
         if try r.step(){
-            return r.column(index: 0, type: String.self).value() == "ok"
+            let v = r.column(index: 0, type: String.self).value() == "ok"
+            r.close()
+            return v
         }
+        r.close()
         return false
     }
     public var foreignKey:Bool{
@@ -605,7 +504,9 @@ extension Database{
             do{
                 let r = try self.query(sql: "PRAGMA foreign_keys")
                 try r.step()
-                return r.column(index: 0, type: Int32.self).value() > 0
+                let a = r.column(index: 0, type: Int32.self).value() > 0
+                r.close()
+                return a
             }catch{
                 return false
             }
@@ -618,29 +519,47 @@ extension Database{
     public func create<T:SQLCode>(obj:T) throws{
         try self.exec(sql: obj.create)
     }
-    public func exist<T:SQLCode>(type:T.Type) throws ->Bool{
+    public func exist<T:SQLCode>(table:T.Type) throws ->Bool{
         var state = false
-        let r = try self.query(sql: "select count(*) from sqlite_master where type='table' and name = '\(type.tableName)'")
+        let r = try self.query(sql: "select count(*) from sqlite_master where type='table' and name = '\(table.tableName)'")
         while try r.step(){
             state = r.column(index: 0, type: Int32.self).value() > 0
         }
+        r.close()
         return state
+    }
+    public func exists<T:SQLCode>(model:T) throws ->Bool{
+        let req = FetchRequest(obj: model,key:.count("*"))
+        req.loadKeyMap(map: model.primaryConditionBindMap)
+        let r = try self.query(sql: req.sql)
+        try r.step()
+        let c = r.column(index: 0, type: Int32.self).value() > 0
+        r.close()
+        return c
+    }
+    public func count<T:SQLCode>(model:T.Type) throws ->Int{
+        let req = FetchRequest(table: model, key: .count("*"))
+        let r = try self.query(sql: req.sql)
+        try r.step()
+        let c = r.column(index: 0, type: Int.self).value()
+        r.close()
+        return c
     }
     public func update<T:SQLCode>(model:T) throws {
         try model.doUpdate(db: self)
     }
-    public func update<T:SQLCode>(model:[String:SqlType],table:T.Type,condition:Condition,bind:[String:OriginValue]) throws {
+    public func update<T:SQLCode>(model:[String:OriginValue?],table:T.Type,condition:Condition,bind:[String:OriginValue]) throws {
         let kv = model.map { i in
-            T.updateSetKeyCode((i.key,i.value))
+            T.updateSetKeyCode((i.key,i.key,i.value))
         }.compactMap({$0}).joined(separator: ",")
         let c = "UPDATE \(T.tableName) SET \(kv) where \(condition.conditionCode)"
         let rs = try self.query(sql: c)
         for i in model{
             
-            if i.value.value is Data{
-                rs.bind(name: "@"+i.key)?.bind(value: i.value.value as! Data)
-            }else if i.value.value is String{
-                rs.bind(name: "@"+i.key)?.bind(value: i.value.value as! String)
+            if i.value is Data{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
+            }else if i.value is String{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
             }
         }
         for i in bind{
@@ -672,8 +591,15 @@ extension Database{
         return re
     }
     public func select<T:SQLCode>(model:T) throws ->T?{
-        let r = FetchRequest<T>(obj: model)
+        let r = FetchRequest(obj: model, key: .all)
         r.loadKeyMap(map: model.primaryConditionBindMap)
+        let s = try self.fetch(request: r)
+        
+        let re = try FetchRequest<T>.readData(resultset: s).first
+        return re
+    }
+    public func select<T:SQLCode>(type:T.Type,key:FetchKey) throws ->T?{
+        let r = FetchRequest(table: type, key: key)
         let s = try self.fetch(request: r)
         
         let re = try FetchRequest<T>.readData(resultset: s).first

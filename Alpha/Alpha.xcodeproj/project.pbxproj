@@ -15,6 +15,8 @@
 		A925326A26AFB7520080E72D /* Backup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A925326326AFB7520080E72D /* Backup.swift */; };
 		A93271F326AFB4A5009107CA /* Alpha.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A93271E926AFB4A4009107CA /* Alpha.framework */; };
 		A93271F826AFB4A5009107CA /* AlphaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A93271F726AFB4A5009107CA /* AlphaTests.swift */; };
+		A9580AF226B120EA00530397 /* macos.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = A9580AF126B120EA00530397 /* macos.xcconfig */; };
+		A9580AF426B1381F00530397 /* Function.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9580AF326B1381F00530397 /* Function.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,6 +41,8 @@
 		A93271F226AFB4A5009107CA /* AlphaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AlphaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A93271F726AFB4A5009107CA /* AlphaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlphaTests.swift; sourceTree = "<group>"; };
 		A93271F926AFB4A5009107CA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A9580AF126B120EA00530397 /* macos.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = macos.xcconfig; sourceTree = "<group>"; };
+		A9580AF326B1381F00530397 /* Function.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Function.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +67,7 @@
 		A93271DF26AFB4A4009107CA = {
 			isa = PBXGroup;
 			children = (
+				A9580AF126B120EA00530397 /* macos.xcconfig */,
 				A93271EB26AFB4A5009107CA /* Alpha */,
 				A93271F626AFB4A5009107CA /* AlphaTests */,
 				A93271EA26AFB4A4009107CA /* Products */,
@@ -88,6 +93,7 @@
 				A925326126AFB7520080E72D /* Mirror.swift */,
 				A925325D26AFB7520080E72D /* Table.swift */,
 				A93271ED26AFB4A5009107CA /* Info.plist */,
+				A9580AF326B1381F00530397 /* Function.swift */,
 			);
 			path = Alpha;
 			sourceTree = "<group>";
@@ -192,6 +198,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A9580AF226B120EA00530397 /* macos.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -211,6 +218,7 @@
 			files = (
 				A925326A26AFB7520080E72D /* Backup.swift in Sources */,
 				A925326826AFB7520080E72D /* Mirror.swift in Sources */,
+				A9580AF426B1381F00530397 /* Function.swift in Sources */,
 				A925326626AFB7520080E72D /* Fetch.swift in Sources */,
 				A925326526AFB7520080E72D /* Database.swift in Sources */,
 				A925326926AFB7520080E72D /* Map.swift in Sources */,
@@ -239,6 +247,7 @@
 /* Begin XCBuildConfiguration section */
 		A93271FB26AFB4A5009107CA /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A9580AF126B120EA00530397 /* macos.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -290,6 +299,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.5;
+				MACOSX_DEPLOYMENT_TARGET = 11.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -348,6 +358,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.5;
+				MACOSX_DEPLOYMENT_TARGET = 11.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -361,7 +372,9 @@
 		};
 		A93271FE26AFB4A5009107CA /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A9580AF126B120EA00530397 /* macos.xcconfig */;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -389,6 +402,7 @@
 		A93271FF26AFB4A5009107CA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD)";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEFINES_MODULE = YES;
@@ -414,8 +428,10 @@
 		};
 		A932720126AFB4A5009107CA /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A9580AF126B120EA00530397 /* macos.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = "$(ARCHS_STANDARD)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = W8LHF9DL7C;
 				INFOPLIST_FILE = AlphaTests/Info.plist;
@@ -435,6 +451,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = "$(ARCHS_STANDARD)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = W8LHF9DL7C;
 				INFOPLIST_FILE = AlphaTests/Info.plist;

@@ -24,43 +24,65 @@ public struct Page{
     public let offset:Int32
     public let limit:Int32
 }
+public enum FetchKey{
+    case count(String)
+    case max(String)
+    case min(String)
+    case all
+    
+    public var keyString:String{
+        switch self{
+     
+        case let .count(c):
+            return "count(\(c))"
+        case let .max(c):
+            return "*,max(\(c))"
+        case let .min(c):
+            return "*,min(\(c))"
+        case .all:
+            return "*"
+        }
+    }
+}
 public class FetchRequest<T:SQLCode>{
     public var sql:String
-    public var keyMap:[String:SqlType] = [:]
-    public init(table:T.Type,condition:Condition? = nil ,page:Page? = nil,order:[Order] = []){
-        self.sql = "select * from `\(T.tableName)`" + ((condition?.conditionCode.count ?? 0) > 0 ? (" where " + condition!.conditionCode) : "") + (order.count > 0 ? " order by" + order.map({$0.code}).joined(separator: ",") : "") + (page == nil ? "" : " LIMIT \(page!.limit) OFFSET \(page!.offset)")
+    public var keyMap:[String:OriginValue] = [:]
+    public init(table:T.Type,key:FetchKey = .all,condition:Condition? = nil ,page:Page? = nil,order:[Order] = []){
+        self.sql = "select \(key.keyString) from `\(T.tableName)`" + ((condition?.conditionCode.count ?? 0) > 0 ? (" where " + condition!.conditionCode) : "") + (order.count > 0 ? " order by" + order.map({$0.code}).joined(separator: ",") : "") + (page == nil ? "" : " LIMIT \(page!.limit) OFFSET \(page!.offset)")
     }
-    public init(obj:SQLCode){
-        self.sql = "select * from `\(T.tableName)` where " + obj.primaryCondition
+    public init(obj:T,key:FetchKey = .all ,page:Page? = nil,order:[Order] = []){
+        self.sql = "select \(key.keyString) from `\(T.tableName)` where " + obj.primaryCondition + (order.count > 0 ? " order by" + order.map({$0.code}).joined(separator: ",") : "") + (page == nil ? "" : " LIMIT \(page!.limit) OFFSET \(page!.offset)")
     }
-    public func loadKeyMap(map:[String:SqlType]){
+    @discardableResult
+    public func loadKeyMap(map:[String:OriginValue])->FetchRequest{
         self.keyMap = map
+        return self
     }
     func doSelectBind(result:Database.ResultSet){
         for i in keyMap {
-            if i.value.value is Int{
-                result.bind(name: i.key)?.bind(value: i.value.value as! Int)
+            if i.value is Int{
+                result.bind(name: "@"+i.key)?.bind(value: i.value as! Int)
             }
-            if i.value.value is Int32{
-                result.bind(name: i.key)?.bind(value: i.value.value as! Int32)
+            if i.value is Int32{
+                result.bind(name: "@"+i.key)?.bind(value: i.value as! Int32)
             }
-            if i.value.value is Int64{
-                result.bind(name: i.key)?.bind(value: i.value.value as! Int64)
+            if i.value is Int64{
+                result.bind(name: "@"+i.key)?.bind(value: i.value as! Int64)
             }
-            if i.value.value is Int{
-                result.bind(name: i.key)?.bind(value: i.value.value as! Int)
+            if i.value is Int{
+                result.bind(name: "@"+i.key)?.bind(value: i.value as! Int)
             }
-            if i.value.value is Double{
-                result.bind(name: i.key)?.bind(value: i.value.value as! Double)
+            if i.value is Double{
+                result.bind(name: "@"+i.key)?.bind(value: i.value as! Double)
             }
-            if i.value.value is Float{
-                result.bind(name: i.key)?.bind(value: i.value.value as! Float)
+            if i.value is Float{
+                result.bind(name: "@"+i.key)?.bind(value: i.value as! Float)
             }
-            if i.value.value is Data{
-                result.bind(name: i.key)?.bind(value: i.value.value as! Data)
+            if i.value is Data{
+                result.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
             }
-            if i.value.value is String{
-                result.bind(name: i.key)?.bind(value: i.value.value as! String)
+            if i.value is String{
+                result.bind(name: "@"+i.key)?.bind(value: i.value as! String)
             }
         }
     }
@@ -69,6 +91,7 @@ public class FetchRequest<T:SQLCode>{
         while try resultset.step() {
             result.append(self.load(result: resultset))
         }
+        resultset.close()
         return result
     }
     static public func load(result:Database.ResultSet)->T{
@@ -84,20 +107,23 @@ public class FetchRequest<T:SQLCode>{
             guard let kp = sqlv.path else { continue }
             
             if vt is Int || vt is Optional<Int>{
-                let v = result.column(index:Int32(i), type: Int.self).value()
+                let colume = result.column(index:Int32(i), type: Int.self)
+                let v = colume.value()
 
                 if let keyPath = kp as? WritableKeyPath<T,Int?>{
-                    sql[keyPath: keyPath] = v
+                    
+                    sql[keyPath: keyPath] = colume.type == .Null ? nil : v
                 }
                 if let keyPath = kp as? WritableKeyPath<T,Int>{
                     sql[keyPath: keyPath] = v
                 }
             }
             if vt is Int32 || vt is Optional<Int32>{
-                let v = result.column(index:Int32(i), type: Int32.self).value()
+                let colume = result.column(index:Int32(i), type: Int32.self)
+                let v = colume.value()
 
                 if let keyPath = kp as? WritableKeyPath<T,Int32?>{
-                    sql[keyPath: keyPath] = v
+                    sql[keyPath: keyPath] = colume.type == .Null ? nil : v
                 }
                 if let keyPath = kp as? WritableKeyPath<T,Int32>{
                     sql[keyPath: keyPath] = v
@@ -105,10 +131,12 @@ public class FetchRequest<T:SQLCode>{
                 }
             }
             if vt is Int64 || vt is Optional<Int64>{
-                let v = result.column(index:Int32(i), type: Int64.self).value()
+                
+                let colume = result.column(index:Int32(i), type: Int64.self)
+                let v = colume.value()
      
                 if let keyPath = kp as? WritableKeyPath<T,Int64?>{
-                    sql[keyPath: keyPath] = v
+                    sql[keyPath: keyPath] = colume.type == .Null ? nil : v
           
                 }
                 if let keyPath = kp as? WritableKeyPath<T,Int64>{
@@ -117,18 +145,18 @@ public class FetchRequest<T:SQLCode>{
                 }
             }
             if vt is Data || vt is Optional<Data> {
-                let v = result.column(index:Int32(i), type: Data.self).value()
+                let colume = result.column(index:Int32(i), type: Data.self)
+                let v = colume.value()
    
                 if let keyPath = kp as? ReferenceWritableKeyPath<T,Data?>{
-                    sql[keyPath: keyPath] = v
-     
+                    sql[keyPath: keyPath] = colume.type == .Null ? nil : v
                 }
                 if let keyPath = kp as? ReferenceWritableKeyPath<T,Data>{
                     sql[keyPath: keyPath] = v
 
                 }
                 if let keyPath = kp as? WritableKeyPath<T,Data?>{
-                    sql[keyPath: keyPath] = v
+                    sql[keyPath: keyPath] = colume.type == .Null ? nil : v
      
                 }
                 if let keyPath = kp as? WritableKeyPath<T,Data>{
@@ -137,17 +165,18 @@ public class FetchRequest<T:SQLCode>{
                 }
             }
             if vt is String || vt is Optional<String>{
-                let v = result.column(index:Int32(i), type: String.self).value()
+                let colume = result.column(index:Int32(i), type: String.self)
+                let v = colume.value()
 
                 if let keyPath = kp as? ReferenceWritableKeyPath<T,String?>{
-                    sql[keyPath: keyPath] = v
+                    sql[keyPath: keyPath] = colume.type == .Null ? nil : v
 
                 }
                 if let keyPath = kp as? ReferenceWritableKeyPath<T,String>{
                     sql[keyPath: keyPath] = v
                 }
                 if let keyPath = kp as? WritableKeyPath<T,String?>{
-                    sql[keyPath: keyPath] = v
+                    sql[keyPath: keyPath] = colume.type == .Null ? nil : v
 
                 }
                 if let keyPath = kp as? WritableKeyPath<T,String>{
@@ -156,10 +185,11 @@ public class FetchRequest<T:SQLCode>{
             }
 
             if vt is Double || vt is Optional<Double>{
-                let v = result.column(index:Int32(i), type: Double.self).value()
+                let colume = result.column(index:Int32(i), type: Double.self)
+                let v = colume.value()
 
                 if let keyPath = kp as? WritableKeyPath<T,Double?>{
-                    sql[keyPath: keyPath] = v
+                    sql[keyPath: keyPath] = colume.type == .Null ? nil : v
   
                 }
                 if let keyPath = kp as? WritableKeyPath<T,Double>{
@@ -168,10 +198,11 @@ public class FetchRequest<T:SQLCode>{
                 }
             }
             if vt is Float || vt is Optional<Float>{
-                let v = result.column(index:Int32(i), type: Float.self).value()
+                let colume = result.column(index:Int32(i), type: Float.self)
+                let v = colume.value()
 
                 if let keyPath = kp as? WritableKeyPath<T,Float?>{
-                    sql[keyPath: keyPath] = v
+                    sql[keyPath: keyPath] = colume.type == .Null ? nil : v
 
                 }
                 if let keyPath = kp as? WritableKeyPath<T,Float>{

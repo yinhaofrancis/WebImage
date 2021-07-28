@@ -478,15 +478,16 @@ extension SQLCode{
         let result = try db.query(sql: self.insert)
         self.doBind(resultSet: result)
         try result.step()
+        result.close()
     }
-    public static func updateSetKeyCode(_ i: (String, SqlType)) -> String? {
-        let key = i.1.keyName ?? i.0
-        if i.1.value is Data{
-            return "\(key) = @\(i.0)"
-        }else if i.1.value is String{
-            return "\(key) = @\(i.0)"
-        }else if i.1.value == nil{
-            return "\(key) = @\(i.0)"
+    public static func updateSetKeyCode(_ i: (String,String, OriginValue?)) -> String? {
+        let key = i.0
+        if i.2 is Data{
+            return "\(key) = @\(i.1)"
+        }else if i.2 is String{
+            return "\(key) = @\(i.1)"
+        }else if i.2 == nil{
+            return "\(key) = @\(i.1)"
         }else{
             return nil
         }
@@ -494,7 +495,7 @@ extension SQLCode{
     
     var update:String{
         let value = self.fullKey.map { i -> String? in
-            return Self.updateSetKeyCode(i)
+            return Self.updateSetKeyCode((i.1.keyName ?? i.0,i.0,i.1.value))
         }.compactMap({$0}).joined(separator: ",")
         if self.primaryKey.count == 0{
             return ""
@@ -507,6 +508,7 @@ extension SQLCode{
         let result = try db.query(sql: self.update)
         self.doBind(resultSet: result)
         try result.step()
+        result.close()
     }
     var delete:String{
         if self.primaryKey.count == 0{
@@ -518,6 +520,7 @@ extension SQLCode{
         let result = try db.query(sql: self.delete)
         self.doBind(resultSet: result)
         try result.step()
+        result.close()
     }
     
     public static func conditionCode(_ i: (String, SqlType)) -> String {
@@ -540,11 +543,11 @@ extension SQLCode{
             return ""
         }
     }
-    var primaryConditionBindMap:[String:SqlType]{
+    var primaryConditionBindMap:[String:OriginValue]{
         self.primaryKey.filter { i in
             i.1.value != nil && (i.1.value is Data || i.1.value is String)
         }.reduce(into: [:]) { r, k in
-            r[k.0] = k.1
+            r[k.0] = k.1.value!
         }
     }
     func doBind(resultSet:Database.ResultSet){
