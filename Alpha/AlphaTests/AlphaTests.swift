@@ -297,7 +297,7 @@ class AlphaTests: XCTestCase {
             try db.drop(modelType: model.self)
             try db.create(obj: model())
             try db.create(obj: model2())
-            for i in 0 ..< 10000 {
+            for i in 0 ..< 100 {
                 try db.insert(model: model(a: i,
                                            b: "ddd\(i)",
                                            c: "dd\(i * 2)".data(using: .utf8)!
