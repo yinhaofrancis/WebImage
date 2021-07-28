@@ -292,7 +292,7 @@ class AlphaTests: XCTestCase {
         }
     }
     func testRollback() throws {
-        self.pool.write { db in
+        self.pool.write(journal: .WAL) { db in
             try db.drop(modelType: model2.self)
             try db.drop(modelType: model.self)
             try db.create(obj: model())
@@ -303,16 +303,21 @@ class AlphaTests: XCTestCase {
                                            c: "dd\(i * 2)".data(using: .utf8)!
                                            , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
             }
+            try db.exec(sql: "PRAGMA journal_mode")
         }
-        self.pool.writeSync { db in
-            try db.update(model: ["oa":100], table: model.self, condition: ConditionKey(key: "a") == "0")
+        self.pool.writeSync(journal: .WAL) { db in
+            for i in 0..<100{
+                try db.update(model: ["oa":100 + i], table: model.self, condition: ConditionKey(key: "a") == ConditionKey(key: "\(i)"))
+            }
+            try db.exec(sql: "PRAGMA journal_mode")
             throw NSError(domain: "test rollback", code: 0, userInfo: nil)
         }
-        self.pool.writeSync { db in
+        self.pool.writeSync(journal: .WAL) { db in
             let m = model(a:0)
             let new = try db.select(model: m)
             XCTAssert(new?.oa == 1)
             print(db.url)
+            try db.exec(sql: "PRAGMA journal_mode")
         }
     }
 }

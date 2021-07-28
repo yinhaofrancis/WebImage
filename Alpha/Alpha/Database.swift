@@ -8,6 +8,32 @@
 import Foundation
 import SQLite3
 
+public struct WalMode:RawRepresentable{
+    public init?(rawValue: Int32) {
+        self.rawValue = rawValue
+    }
+    
+    public var rawValue: Int32
+    
+    public typealias RawValue = Int32
+    
+
+    public static var Passive   = WalMode(rawValue: SQLITE_CHECKPOINT_PASSIVE)!
+    public static var Full      = WalMode(rawValue: SQLITE_CHECKPOINT_FULL)!
+    public static var Restart   = WalMode(rawValue: SQLITE_CHECKPOINT_RESTART)!
+    public static var Truncate  = WalMode(rawValue: SQLITE_CHECKPOINT_TRUNCATE)!
+    
+}
+
+public enum JournalMode:String{
+    case DELETE
+    case TRUNCATE
+    case PERSIST
+    case MEMORY
+    case WAL
+    case OFF
+}
+
 public class Database:Hashable{
     public static func == (lhs: Database, rhs: Database) -> Bool {
         lhs.hashValue == rhs.hashValue
@@ -206,156 +232,6 @@ public class Database:Hashable{
         }
     }
 }
-public class DataBasePool{
-    static public func checkDir() throws->URL{
-        let name = Bundle.main.bundleIdentifier ?? "main" + ".Database"
-        let url = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent(name)
-        var b:ObjCBool = false
-        let a = FileManager.default.fileExists(atPath: url.path, isDirectory: &b)
-        if !(b.boolValue && a){
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
-        }
-        return url
-    }
-    static public func checkBackUpDir() throws->URL{
-        let name = (Bundle.main.bundleIdentifier ?? "main" + ".Database") + ".back"
-        let url = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent(name)
-        var b:ObjCBool = false
-        let a = FileManager.default.fileExists(atPath: url.path, isDirectory: &b)
-        if !(b.boolValue && a){
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
-        }
-        return url
-    }
-    public let queue:DispatchQueue = DispatchQueue(label: "database", qos: .background, attributes: .concurrent, autoreleaseFrequency: .inherit, target: nil)
-    
-    public private(set) var url:URL
-    private var read:List<Database> = List()
-    private var wdb:Database
-    private var semphone = DispatchSemaphore(value: 3)
-    private var dbName:String
-    private var thread:Thread?
-    private var timer:Timer?
-    public init(name:String) throws {
-        let url = try DataBasePool.checkDir().appendingPathComponent(name)
-        let back = try DataBasePool.checkBackUpDir().appendingPathComponent(name)
-        self.dbName = name
-        if !FileManager.default.fileExists(atPath: url.path) && !FileManager.default.fileExists(atPath: back.path){
-            FileManager.default.createFile(atPath: url.path, contents: nil, attributes: nil)
-        }else if !FileManager.default.fileExists(atPath: url.path){
-            try? DataBasePool.restore(name: name)
-        }
-        self.wdb = try Database(url: url)
-        self.url = url
-        self.thread = Thread(block: {
-            self.timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true, block: { t in
-                self.backup()
-            })
-            RunLoop.current.run()
-        })
-        self.thread?.start()
-    }
-
-    public func read(callback:@escaping (Database) throws->Void){
-        self.queue.async {
-            do {
-                self.semphone.wait()
-                defer{
-                    
-                    self.semphone.signal()
-                }
-                
-                let db = try self.createReadOnly()
-                db.foreignKey = true
-                try callback(db)
-                self.read.append(element: db)
-            }catch{
-                print(error)
-            }
-        }
-    }
-    public func readSync(callback:@escaping (Database) throws->Void){
-        self.queue.sync {
-            do {
-                self.semphone.wait()
-                defer{
-                    
-                    self.semphone.signal()
-                }
-                
-                let db = try self.createReadOnly()
-                db.foreignKey = true
-                try callback(db)
-                self.read.append(element: db)
-            }catch{
-                print(error)
-            }
-        }
-    }
-    public func writeSync(callback:@escaping (Database) throws ->Void){
-        self.queue.sync(execute: DispatchWorkItem(flags: .barrier, block: {
-            let db = self.wdb
-            do {
-                db.foreignKey = true
-                try db.begin()
-                try callback(db)
-                try db.commit()
-            }catch{
-                print(error)
-                try? db.rollback()
-            }
-        }))
-    }
-    private func createReadOnly() throws ->Database{
-        if let db = self.read.removeFirst(){
-            return db
-        }
-        let db = try Database(url: self.url, readOnly: true)
-        return db
-    }
-    public func write(callback:@escaping (Database) throws ->Void){
-        self.queue.async(execute: DispatchWorkItem(flags: .barrier, block: {
-            let db = self.wdb
-            do {
-                db.foreignKey = true
-                print(db.foreignKey)
-                try db.begin()
-                try callback(db)
-                try db.commit()
-            }catch{
-                print(error)
-                try? db.rollback()
-            }
-        }))
-    }
-    public func backup(){
-        self.read { db in
-            let u = try DataBasePool.checkBackUpDir().appendingPathComponent(self.dbName)
-            try BackupDatabase(url: u, source: db).backup()
-        }
-    }
-    public static func restore(name:String) throws {
-        let u = try DataBasePool.checkBackUpDir().appendingPathComponent(name)
-        let ur = try DataBasePool.checkDir().appendingPathComponent(name)
-        DispatchQueue.global().sync {
-            do{
-                try FileManager.default.removeItem(at: ur)
-                let source = try Database(url: u, readOnly: true)
-                try BackupDatabase(url: ur, source: source).backup()
-            }catch{
-                print("restore fail")
-            }
-        }
-    }
-    deinit {
-        self.wdb.close()
-        for i in 0 ..< self.read.count {
-            self.read[i]?.close()
-        }
-        self.thread?.cancel()
-        self.timer?.invalidate()
-    }
-}
 
 public struct TableInfo{
     public let cid:Int
@@ -441,6 +317,7 @@ extension Database{
     public func begin() throws {
         try self.exec(sql: "BEGIN;")
     }
+    
     public func close(){
         sqlite3_close(self.sqlite)
     }
@@ -625,4 +502,18 @@ extension Database{
     public func drop<T:SQLCode>(modelType:T.Type) throws{
         try self.exec(sql: "drop table if exists `\(T.tableName)`")
     }
+    public func checkpoint(type:WalMode,filename:String,frame:Int32){
+        let a = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
+        a.pointee = frame
+        sqlite3_wal_checkpoint_v2(self.sqlite, filename, type.rawValue, a, a)
+        a.deallocate()
+    }
+    public func checkpoint(frame:Int32 = 1000){
+        sqlite3_wal_autocheckpoint(self.sqlite, frame)
+    }
+    public func setJournalMode(_ model:JournalMode) throws {
+        try self.exec(sql: "PRAGMA journal_mode = \(model)")
+    }
+    
+    
 }
