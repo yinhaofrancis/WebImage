@@ -82,7 +82,8 @@ class AlphaTests: XCTestCase {
         try DataBasePool(name: name)
     }
     override func setUpWithError() throws {
-        
+//        self.db = try self.data(name: "data")
+        self.pool = try self.datapool(name: "datapool")
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
 
@@ -90,185 +91,216 @@ class AlphaTests: XCTestCase {
         print(try Env.home())
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
+//    var db:Database!
+    var pool:DataBasePool!
 
     func testCreateAndDropTable() throws {
-        let db = try self.data(name: "a")
-        let sql = """
-        CREATE TABLE pp (
-            Field1 INTEGER,
-            Field2 TEXT UNIQUE,
-            Field3    BLOB NOT NULL DEFAULT k,
-            PRIMARY KEY(Field1 AUTOINCREMENT)
-            );
-            CREATE TABLE sds (
-                Field1    INTEGER,
-                Field2    TEXT DEFAULT d UNIQUE COLLATE BINARY,
-                FOREIGN KEY(Field2) REFERENCES pp(Field1) on delete cascade,
-                PRIMARY KEY(Field2)
-            );
-"""
-        
-        try db.exec(sql: sql)
-        let pp = try db.tableInfo(name: "pp")
-        for i in pp {
-            if i.key == "Field1"{
-                XCTAssert(i.value.cid == 0, "index fail")
-                XCTAssert(i.value.name == "Field1", "name fail")
-                XCTAssert(i.value.type == "INTEGER", "type fail")
-                XCTAssert(i.value.dlft_value == "", "default fail")
-                XCTAssert(i.value.pk == 1, "default fail")
-                XCTAssert(i.value.notnull == 0, "default fail")
+        self.pool.write { db in
+            let sql = """
+            CREATE TABLE pp (
+                Field1 INTEGER,
+                Field2 TEXT UNIQUE,
+                Field3    BLOB NOT NULL DEFAULT k,
+                PRIMARY KEY(Field1 AUTOINCREMENT)
+                );
+                CREATE TABLE sds (
+                    Field1    INTEGER,
+                    Field2    TEXT DEFAULT d UNIQUE COLLATE BINARY,
+                    FOREIGN KEY(Field2) REFERENCES pp(Field1) on delete cascade,
+                    PRIMARY KEY(Field2)
+                );
+    """
+            
+            try db.exec(sql: sql)
+            let pp = try db.tableInfo(name: "pp")
+            for i in pp {
+                if i.key == "Field1"{
+                    XCTAssert(i.value.cid == 0, "index fail")
+                    XCTAssert(i.value.name == "Field1", "name fail")
+                    XCTAssert(i.value.type == "INTEGER", "type fail")
+                    XCTAssert(i.value.dlft_value == "", "default fail")
+                    XCTAssert(i.value.pk == 1, "default fail")
+                    XCTAssert(i.value.notnull == 0, "default fail")
+                }
+                if i.key == "Field2"{
+                    XCTAssert(i.value.cid == 1, "index fail")
+                    XCTAssert(i.value.name == "Field2", "name fail")
+                    XCTAssert(i.value.type == "TEXT", "type fail")
+                    XCTAssert(i.value.dlft_value == "", "default fail")
+                    XCTAssert(i.value.pk == 0, "default fail")
+                    XCTAssert(i.value.notnull == 0, "default fail")
+                }
+                if i.key == "Field3"{
+                    XCTAssert(i.value.cid == 2, "index fail")
+                    XCTAssert(i.value.name == "Field3", "name fail")
+                    XCTAssert(i.value.type == "BLOB", "type fail")
+                    XCTAssert(i.value.dlft_value == "k", "default fail")
+                    XCTAssert(i.value.pk == 0, "default fail")
+                    XCTAssert(i.value.notnull == 1, "default fail")
+                }
             }
-            if i.key == "Field2"{
-                XCTAssert(i.value.cid == 1, "index fail")
-                XCTAssert(i.value.name == "Field2", "name fail")
-                XCTAssert(i.value.type == "TEXT", "type fail")
-                XCTAssert(i.value.dlft_value == "", "default fail")
-                XCTAssert(i.value.pk == 0, "default fail")
-                XCTAssert(i.value.notnull == 0, "default fail")
+            let fp = try db.tableForeignKeyInfo(name: "sds")
+            for i in fp{
+                XCTAssert(i.key == "Field2", "name fail")
+                XCTAssert(i.value.id == 0 , "name fail")
+                XCTAssert(i.value.from == "Field2", "from fail")
+                XCTAssert(i.value.to == "Field1", "to fail")
+                XCTAssert(i.value.table == "pp", "ref table fail")
+                XCTAssert(i.value.onUpdate == .NO_ACTION, "name fail")
+                XCTAssert(i.value.onDelete == .CASCADE, "name fail")
             }
-            if i.key == "Field3"{
-                XCTAssert(i.value.cid == 2, "index fail")
-                XCTAssert(i.value.name == "Field3", "name fail")
-                XCTAssert(i.value.type == "BLOB", "type fail")
-                XCTAssert(i.value.dlft_value == "k", "default fail")
-                XCTAssert(i.value.pk == 0, "default fail")
-                XCTAssert(i.value.notnull == 1, "default fail")
-            }
+            try db.exec(sql: "drop table sds;drop table pp;")
+            try db.exec(sql: sql)
+            try db.exec(sql: "drop table sds;drop table pp;")
         }
-        let fp = try db.tableForeignKeyInfo(name: "sds")
-        for i in fp{
-            XCTAssert(i.key == "Field2", "name fail")
-            XCTAssert(i.value.id == 0 , "name fail")
-            XCTAssert(i.value.from == "Field2", "from fail")
-            XCTAssert(i.value.to == "Field1", "to fail")
-            XCTAssert(i.value.table == "pp", "ref table fail")
-            XCTAssert(i.value.onUpdate == .NO_ACTION, "name fail")
-            XCTAssert(i.value.onDelete == .CASCADE, "name fail")
+        self.pool.writeSync { db in
+            
         }
-        try db.exec(sql: "drop table sds;drop table pp;")
-        try db.exec(sql: sql)
-        try db.exec(sql: "drop table sds;drop table pp;")
     }
     func testCreateTableByModel() throws {
-        struct model3:SQLCode{
-            static var tableName: String =  "model3"
+        self.pool.write { db in
+            struct model3:SQLCode{
+                static var tableName: String =  "model3"
+                
             
-        
-            
-            var i:Int = 0
-        }
-        let dm = try self.data(name: "data")
-        dm.foreignKey = true
-        try dm.drop(modelType: model2.self)
-        try dm.drop(modelType: model.self)
-        try dm.drop(modelType: model3.self)
-        try dm.create(obj: model())
-        try dm.create(obj: model2())
-        try dm.create(obj: model3())
-        for i in 0 ..< 10 {
-            try dm.insert(model: model(a: i,
-                                       b: "ddd\(i)",
-                                       c: "dd\(i * 2)".data(using: .utf8)!
-                                       , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
-        }
-        for i in 0 ..< 10 {
-            do {
-                try dm.insert(model: model(a: i, b: "ddd", c: "dd".data(using: .utf8)!, d: 0.9))
-            } catch {
-                break;
+                
+                var i:Int = 0
             }
-            XCTAssert(false, "table primary constaint fail")
+            db.foreignKey = true
+            try db.drop(modelType: model2.self)
+            try db.drop(modelType: model.self)
+            try db.drop(modelType: model3.self)
+            try db.create(obj: model())
+            try db.create(obj: model2())
+            try db.create(obj: model3())
+            for i in 0 ..< 10 {
+                try db.insert(model: model(a: i,
+                                           b: "ddd\(i)",
+                                           c: "dd\(i * 2)".data(using: .utf8)!
+                                           , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
+            }
+            for i in 0 ..< 10 {
+                do {
+                    try db.insert(model: model(a: i, b: "ddd", c: "dd".data(using: .utf8)!, d: 0.9))
+                } catch {
+                    break;
+                }
+                XCTAssert(false, "table primary constaint fail")
+            }
+            for i in 0 ..< 10 {
+                try db.insert(model: model2(a2: i, a: i,b: "ddd\(i)"))
+            }
+            var f = false
+            do {
+                try db.insert(model: model2(a2: 100, a:100))
+            } catch  {
+                f = true
+            }
+            
+            XCTAssert(f, "table foreign keu constaint fail")
+            let r = try db.select(request: FetchRequest(table: model.self))
+            print(r)
+            for i in 0..<10 {
+                XCTAssert(r[i].a == i,"\(r[i].a)")
+                XCTAssert(r[i].b == "ddd\(i)",r[i].b)
+                XCTAssert(String(data: r[i].c, encoding: .utf8)! == "dd\(i * 2)",String(data: r[i].c, encoding: .utf8)!)
+                XCTAssert(r[i].d == 0.9 + Double(i),"\(r[i].d )")
+                XCTAssert(r[i].f == 0)
+                XCTAssert(r[i].g == 0)
+                XCTAssert(r[i].oa == i + 1)
+                XCTAssert(r[i].ob == nil)
+                XCTAssert(r[i].oc == nil)
+                XCTAssert(r[i].od == nil)
+                XCTAssert(r[i].of! == 10 - i)
+                XCTAssert(r[i].og == 1)
+            }
+            let r2 = try db.select(request: FetchRequest(table: model2.self))
+            for i in 0..<10 {
+                XCTAssert(r2[i].a == i)
+                XCTAssert(r2[i].a2 == i)
+            }
+            var up = r[0]
+            up.og = nil
+            up.oc = "abc".data(using: .utf8)
+            up.ob = "abc"
+            try db.update(model: up)
+            let rr = try db.select(model: model(a: 0))
+            XCTAssert(rr != nil)
+            XCTAssert(rr?.og == nil)
+    //        XCTAssert(rr[0].a == 100)
+            
+            
+            XCTAssert(String(data: rr!.oc!, encoding: .utf8)! == "abc")
+            XCTAssert(rr?.ob == "abc")
         }
-        for i in 0 ..< 10 {
-            try dm.insert(model: model2(a2: i, a: i,b: "ddd\(i)"))
+        self.pool.writeSync { db in
+            
         }
-        var f = false
-        do {
-            try dm.insert(model: model2(a2: 100, a:100))
-        } catch  {
-            f = true
-        }
-        
-        XCTAssert(f, "table foreign keu constaint fail")
-        let r = try dm.select(request: FetchRequest(table: model.self))
-        print(r)
-        for i in 0..<10 {
-            XCTAssert(r[i].a == i,"\(r[i].a)")
-            XCTAssert(r[i].b == "ddd\(i)",r[i].b)
-            XCTAssert(String(data: r[i].c, encoding: .utf8)! == "dd\(i * 2)",String(data: r[i].c, encoding: .utf8)!)
-            XCTAssert(r[i].d == 0.9 + Double(i),"\(r[i].d )")
-            XCTAssert(r[i].f == 0)
-            XCTAssert(r[i].g == 0)
-            XCTAssert(r[i].oa == i + 1)
-            XCTAssert(r[i].ob == nil)
-            XCTAssert(r[i].oc == nil)
-            XCTAssert(r[i].od == nil)
-            XCTAssert(r[i].of! == 10 - i)
-            XCTAssert(r[i].og == 1)
-        }
-        let r2 = try dm.select(request: FetchRequest(table: model2.self))
-        for i in 0..<10 {
-            XCTAssert(r2[i].a == i)
-            XCTAssert(r2[i].a2 == i)
-        }
-        var up = r[0]
-        up.og = nil
-        up.oc = "abc".data(using: .utf8)
-        up.ob = "abc"
-        try dm.update(model: up)
-        let rr = try dm.select(model: model(a: 0))
-        XCTAssert(rr != nil)
-        XCTAssert(rr?.og == nil)
-//        XCTAssert(rr[0].a == 100)
-        
-        
-        XCTAssert(String(data: rr!.oc!, encoding: .utf8)! == "abc")
-        XCTAssert(rr?.ob == "abc")
-        dm.close()
     }
     func testSelect() throws{
-        let dm = try self.data(name: "data")
-        if (dm.foreignKey == false){
-            dm.foreignKey = true
+        self.pool.write { db in
+            if (db.foreignKey == false){
+                db.foreignKey = true
+            }
+            try db.drop(modelType: model2.self)
+            try db.drop(modelType: model.self)
+            try db.create(obj: model())
+            try db.create(obj: model2())
+            for i in 0 ..< 100 {
+                try db.insert(model: model(a: i,
+                                           b: "ddd\(i)",
+                                           c: "dd\(i * 2)".data(using: .utf8)!
+                                           , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
+            }
+            let request = FetchRequest(table: model.self, condition: ConditionKey("a") < "@ktop" && ConditionKey("a") > "@kbottom", page: Page(offset: 10, limit: 20), order: [.desc("a")])
+            request.loadKeyMap(map: ["kbottom":"10","ktop":"90"])
+            let r = try db.select(request: request)
+            for i in 0 ..< r.count {
+                XCTAssert(r[i].a == 79 - i)
+            }
+            var noExist = r[0]
+            noExist.a = -1000
+            XCTAssert(try db.exists(model: r[0]))
+            XCTAssert(try !db.exists(model: noExist))
+            XCTAssert(try db.count(model: model.self) == 100)
+            XCTAssert(try db.select(type: model.self, key: .max("a"))?.b == "ddd99")
+            XCTAssert(try db.select(type: model.self, key: .min("a"))?.b == "ddd0")
+            try db.delete(model: r[0])
+            XCTAssertNil(try db.select(model: r[0]))
+            try db.delete(table: model.self, condition: Condition.like(lk: "b_key", rk: "@linl"), bind: ["linl":"ddd1%"])
+            let cc = try db.count(model: model.self)
+            XCTAssert(cc == 88)
+            try db.update(model: ["c":"sdsds".data(using: .utf8)!], table: model.self, condition: Condition.like(lk: "b_key", rk: "@linl"), bind: ["linl":"ddd2%"])
+            let datas = try db.select(request: FetchRequest(table: model.self, key: .all, condition: Condition.like(lk: "b_key", rk: "@linl")).loadKeyMap(map: ["linl":"ddd2%"]))
+            for i in datas {
+                XCTAssert("sdsds" == String(data: i.c, encoding: .utf8))
+            }
+            try db.dataMaster(type: "table").map({$0.name}).forEach { i in
+                print(try db.integrityCheck(table: i))
+            }
+            noExist.b = "dsdsadasdasdasdadadas"
+            try db.save(model: noExist)
+            for i in try db.select(request: FetchRequest(table: model.self, key: .all, condition: ConditionKey("a") == "@a1").loadKeyMap(map: ["a1":noExist.a])){
+                if i.a == noExist.a{
+                    XCTAssert(i.b == noExist.b)
+                }
+            }
+            noExist.b = "dddddfdfdfdfdfdfdfdsdsdsds"
+            try db.save(model: noExist)
+            for i in try db.select(request: FetchRequest(table: model.self, key: .all, condition: ConditionKey("a") == "@a1").loadKeyMap(map: ["a1":noExist.a])){
+                if i.a == noExist.a{
+                    XCTAssert(i.b == noExist.b)
+                }
+            }
         }
-        try dm.drop(modelType: model2.self)
-        try dm.drop(modelType: model.self)
-        try dm.create(obj: model())
-        try dm.create(obj: model2())
-        for i in 0 ..< 100 {
-            try dm.insert(model: model(a: i,
-                                       b: "ddd\(i)",
-                                       c: "dd\(i * 2)".data(using: .utf8)!
-                                       , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
+        self.pool.writeSync { db in
+            
         }
-        let request = FetchRequest(table: model.self, condition: ConditionKey("a") < "@ktop" && ConditionKey("a") > "@kbottom", page: Page(offset: 10, limit: 20), order: [.desc("a")])
-        request.loadKeyMap(map: ["kbottom":"10","ktop":"90"])
-        let r = try dm.select(request: request)
-        for i in 0 ..< r.count {
-            XCTAssert(r[i].a == 79 - i)
+    }
+    func testRollback() throws {
+        self.pool.write { db in
+            
         }
-        var noExist = r[0]
-        noExist.a = -1000
-        XCTAssert(try dm.exists(model: r[0]))
-        XCTAssert(try !dm.exists(model: noExist))
-        XCTAssert(try dm.count(model: model.self) == 100)
-        XCTAssert(try dm.select(type: model.self, key: .max("a"))?.b == "ddd99")
-        XCTAssert(try dm.select(type: model.self, key: .min("a"))?.b == "ddd0")
-        try dm.delete(model: r[0])
-        XCTAssertNil(try dm.select(model: r[0]))
-        try dm.delete(table: model.self, condition: Condition.like(lk: "b_key", rk: "@linl"), bind: ["linl":"ddd1%"])
-        let cc = try dm.count(model: model.self)
-        XCTAssert(cc == 88)
-        try dm.update(model: ["c":"sdsds".data(using: .utf8)!], table: model.self, condition: Condition.like(lk: "b_key", rk: "@linl"), bind: ["linl":"ddd2%"])
-        let datas = try dm.select(request: FetchRequest(table: model.self, key: .all, condition: Condition.like(lk: "b_key", rk: "@linl")).loadKeyMap(map: ["linl":"ddd2%"]))
-        for i in datas {
-            XCTAssert("sdsds" == String(data: i.c, encoding: .utf8))
-        }
-        try dm.dataMaster(type: "table").map({$0.name}).forEach { i in
-            print(try dm.integrityCheck(table: i))
-        }
-        dm.close()
     }
 }
 public class Env{

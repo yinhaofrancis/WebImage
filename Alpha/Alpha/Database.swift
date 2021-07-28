@@ -8,6 +8,15 @@
 import Foundation
 import SQLite3
 
+public enum JournalMode:String{
+    case DELETE
+    case TRUNCATE
+    case PERSIST
+    case MEMORY
+    case WAL
+    case OFF
+}
+
 public class Database:Hashable{
     public static func == (lhs: Database, rhs: Database) -> Bool {
         lhs.hashValue == rhs.hashValue
@@ -25,6 +34,7 @@ public class Database:Hashable{
         if(self.sqlite == nil){
             throw NSError(domain: "create sqlite3 fail", code: 0, userInfo: ["url":url])
         }
+        try self.setJournalMode(mode: .WAL)
     }
     deinit {
         sqlite3_close(self.sqlite)
@@ -519,15 +529,6 @@ extension Database{
     public func create<T:SQLCode>(obj:T) throws{
         try self.exec(sql: obj.create)
     }
-    public func exist<T:SQLCode>(table:T.Type) throws ->Bool{
-        var state = false
-        let r = try self.query(sql: "select count(*) from sqlite_master where type='table' and name = '\(table.tableName)'")
-        while try r.step(){
-            state = r.column(index: 0, type: Int32.self).value() > 0
-        }
-        r.close()
-        return state
-    }
     public func exists<T:SQLCode>(model:T) throws ->Bool{
         let req = FetchRequest(obj: model,key:.count("*"))
         req.loadKeyMap(map: model.primaryConditionBindMap)
@@ -536,6 +537,13 @@ extension Database{
         let c = r.column(index: 0, type: Int32.self).value() > 0
         r.close()
         return c
+    }
+    public func save<T:SQLCode>(model:T) throws{
+        if try self.exists(model: model){
+            try self.update(model: model)
+        }else{
+            try self.insert(model: model)
+        }
     }
     public func count<T:SQLCode>(model:T.Type) throws ->Int{
         let req = FetchRequest(table: model, key: .count("*"))
@@ -613,5 +621,8 @@ extension Database{
     }
     public func drop<T:SQLCode>(modelType:T.Type) throws{
         try self.exec(sql: "drop table if exists `\(T.tableName)`")
+    }
+    public func setJournalMode(mode:JournalMode) throws{
+        try self.exec(sql: "PRAGMA journal_mode = " + mode.rawValue)
     }
 }
