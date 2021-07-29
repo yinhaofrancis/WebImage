@@ -503,14 +503,17 @@ extension Database{
     public func drop<T:SQLCode>(modelType:T.Type) throws{
         try self.exec(sql: "drop table if exists `\(T.tableName)`")
     }
-    public func checkpoint(type:WalMode,log:Int32,total:Int32){
+    public func checkpoint(type:WalMode,log:Int32,total:Int32) throws {
         let l = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
         let t = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
         l.pointee = log
         t.pointee = total
-        sqlite3_wal_checkpoint_v2(self.sqlite, self.uuid, type.rawValue, l, t)
+        let code = sqlite3_wal_checkpoint_v2(self.sqlite, self.uuid, type.rawValue, l, t)
         l.deallocate()
         t.deallocate()
+        if SQLITE_OK != code{
+            throw NSError(domain: Self.errormsg(pointer: self.sqlite), code: Int(code), userInfo: nil)
+        }
     }
     public func autoCheckpoint(frame:Int32 = 100) throws{
         let code = sqlite3_wal_autocheckpoint(self.sqlite, frame)

@@ -86,7 +86,7 @@ class AlphaTests: XCTestCase {
         self.pool = try self.datapool(name: "datapool")
         self.pool.config { db in
             try db.setJournalMode(.WAL)
-            db.checkpoint(type: .Restart, log: 50, total: 100)
+            try db.autoCheckpoint(frame: 10)
         }
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
