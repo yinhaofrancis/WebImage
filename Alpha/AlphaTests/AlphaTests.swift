@@ -84,6 +84,10 @@ class AlphaTests: XCTestCase {
     override func setUpWithError() throws {
 //        self.db = try self.data(name: "data")
         self.pool = try self.datapool(name: "datapool")
+        self.pool.config { db in
+            try db.setJournalMode(.WAL)
+            db.checkpoint(type: .Restart, log: 50, total: 100)
+        }
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
 
@@ -292,6 +296,7 @@ class AlphaTests: XCTestCase {
         }
     }
     func testRollback() throws {
+        
         self.pool.write { db in
             
             try db.drop(modelType: model2.self)
@@ -305,17 +310,15 @@ class AlphaTests: XCTestCase {
                                            , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
             }
             try db.exec(sql: "PRAGMA journal_mode")
-            db.checkpoint(type: .Full, frame: 50)
-            
         }
-        self.pool.writeSync { db in
+        self.pool.write { db in
             for i in 0..<100{
                 try db.update(model: ["oa":100 + i], table: model.self, condition: ConditionKey(key: "a") == ConditionKey(key: "\(i)"))
-                db.checkpoint(type: .Full, frame: 1000)
             }
             try db.exec(sql: "PRAGMA journal_mode")
-            throw NSError(domain: "test rollback", code: 0, userInfo: nil)
+            throw NSError(domain: "e", code: 0, userInfo: nil)
         }
+
         self.pool.read { db in
             let m = model(a:0)
             let new = try db.select(model: m)

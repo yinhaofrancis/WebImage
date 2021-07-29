@@ -46,11 +46,12 @@ public class Database:Hashable{
     public var sqlite:OpaquePointer?
     public init(url:URL,readOnly:Bool = false) throws{
         self.url = url
-        let r = readOnly ? SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX  : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX)
+        let r = readOnly ? SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX  : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX)
         sqlite3_open_v2(url.path, &self.sqlite, r , nil)
         if(self.sqlite == nil){
             throw NSError(domain: "create sqlite3 fail", code: 0, userInfo: ["url":url])
         }
+        self.hook()
     }
     deinit {
         sqlite3_close(self.sqlite)
@@ -502,16 +503,44 @@ extension Database{
     public func drop<T:SQLCode>(modelType:T.Type) throws{
         try self.exec(sql: "drop table if exists `\(T.tableName)`")
     }
-    public func checkpoint(type:WalMode,frame:Int32){
-        let a = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
-        a.pointee = frame
-        sqlite3_wal_checkpoint_v2(self.sqlite, self.uuid, type.rawValue, a, a)
-        a.deallocate()
+    public func checkpoint(type:WalMode,log:Int32,total:Int32){
+        let l = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
+        let t = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
+        l.pointee = log
+        t.pointee = total
+        sqlite3_wal_checkpoint_v2(self.sqlite, self.uuid, type.rawValue, l, t)
+        l.deallocate()
+        t.deallocate()
     }
-    public func checkpoint(frame:Int32 = 1000){
-        sqlite3_wal_autocheckpoint(self.sqlite, frame)
+    public func autoCheckpoint(frame:Int32 = 100) throws{
+        let code = sqlite3_wal_autocheckpoint(self.sqlite, frame)
+        if SQLITE_OK != code{
+            throw NSError(domain: Self.errormsg(pointer: self.sqlite), code: Int(code), userInfo: nil)
+        }
     }
     public func setJournalMode(_ model:JournalMode) throws {
         try self.exec(sql: "PRAGMA journal_mode = \(model)")
+    }
+    private func hook(){
+        sqlite3_wal_hook(self.sqlite, { s, sql, c, co in
+            guard let str = c else { return 0 }
+            print("-------------")
+            print("DO WAL :" + String(cString: str))
+            print("-------------")
+            return 0
+        }, Unmanaged.passUnretained(self).toOpaque())
+        
+        sqlite3_commit_hook(self.sqlite, { s in
+            print("-------------")
+            print("DO COMMIT :")
+            print("-------------")
+            return 0
+        }, Unmanaged.passUnretained(self).toOpaque())
+        
+        sqlite3_rollback_hook(self.sqlite, { s in
+            print("-------------")
+            print("DO ROLLBACK")
+            print("-------------")
+        }, Unmanaged.passUnretained(self).toOpaque())
     }
 }

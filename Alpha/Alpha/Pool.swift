@@ -56,7 +56,15 @@ public class DataBasePool{
         })
         self.thread?.start()
     }
-
+    public func config(callback:@escaping (Database) throws->Void){
+        self.queue.sync(execute: DispatchWorkItem(flags: .barrier, block: {
+            do{
+                try callback(self.wdb)
+            }catch{
+                print(error)
+            }
+        }))
+    }
     public func read(callback:@escaping (Database) throws->Void){
         self.queue.async {
             do {
@@ -93,42 +101,11 @@ public class DataBasePool{
             }
         }
     }
-    public func writeTransactionSync(journal:JournalMode = .DELETE, callback:@escaping (Database) throws ->Bool){
-        self.queue.sync(execute: DispatchWorkItem(flags: .barrier, block: {
-            let db = self.wdb
-            do{
-                try db.setJournalMode(journal)
-            }catch{
-                print(error)
-                return
-            }
-            do {
-                db.foreignKey = true
-                try db.begin()
-                if try callback(db){
-                    try db.commit()
-                }else{
-                    try db.rollback()
-                }
-            }catch{
-                print(error)
-                try? db.rollback()
-            }
-        }))
-    }
-    
-    public func writeTransaction(journal:JournalMode = .DELETE,callback:@escaping (Database) throws ->Bool){
+    public func transaction(callback:@escaping (Database) throws ->Bool){
         self.queue.async(execute: DispatchWorkItem(flags: .barrier, block: {
             let db = self.wdb
-            do{
-                try db.setJournalMode(journal)
-            }catch{
-                print(error)
-                return
-            }
             do {
                 db.foreignKey = true
-                print(db.foreignKey)
                 try db.begin()
                 if try callback(db){
                     try db.commit()
@@ -141,15 +118,31 @@ public class DataBasePool{
             }
         }))
     }
-    public func writeSync(callback:@escaping (Database) throws ->Void){
-        self.writeTransactionSync(callback: { db in
+    public func transactionSync(callback:@escaping (Database) throws ->Bool){
+        self.queue.sync(execute: DispatchWorkItem(flags: .barrier, block: {
+            let db = self.wdb
+            do {
+                db.foreignKey = true
+                try db.begin()
+                if try callback(db){
+                    try db.commit()
+                }else{
+                    try db.rollback()
+                }
+            }catch{
+                print(error)
+                try? db.rollback()
+            }
+        }))
+    }
+    public func write(callback:@escaping (Database) throws ->Void){
+        self.transaction(callback: { db in
             try callback(db)
             return true
         })
     }
-    
-    public func write(journal:JournalMode = .DELETE,callback:@escaping (Database) throws ->Void){
-        self.writeTransaction(callback: { db in
+    public func writeSync(callback:@escaping (Database) throws ->Void){
+        self.transactionSync(callback: { db in
             try callback(db)
             return true
         })
