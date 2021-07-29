@@ -93,7 +93,7 @@ public class DataBasePool{
             }
         }
     }
-    public func writeSync(journal:JournalMode = .DELETE, callback:@escaping (Database) throws ->Void){
+    public func writeTransactionSync(journal:JournalMode = .DELETE, callback:@escaping (Database) throws ->Bool){
         self.queue.sync(execute: DispatchWorkItem(flags: .barrier, block: {
             let db = self.wdb
             do{
@@ -104,24 +104,20 @@ public class DataBasePool{
             }
             do {
                 db.foreignKey = true
-                
                 try db.begin()
-                try callback(db)
-                try db.commit()
+                if try callback(db){
+                    try db.commit()
+                }else{
+                    try db.rollback()
+                }
             }catch{
                 print(error)
                 try? db.rollback()
             }
         }))
     }
-    private func createReadOnly() throws ->Database{
-        if let db = self.read.removeFirst(){
-            return db
-        }
-        let db = try Database(url: self.url, readOnly: true)
-        return db
-    }
-    public func write(journal:JournalMode = .DELETE,callback:@escaping (Database) throws ->Void){
+    
+    public func writeTransaction(journal:JournalMode = .DELETE,callback:@escaping (Database) throws ->Bool){
         self.queue.async(execute: DispatchWorkItem(flags: .barrier, block: {
             let db = self.wdb
             do{
@@ -134,13 +130,29 @@ public class DataBasePool{
                 db.foreignKey = true
                 print(db.foreignKey)
                 try db.begin()
-                try callback(db)
-                try db.commit()
+                if try callback(db){
+                    try db.commit()
+                }else{
+                    try db.rollback()
+                }
             }catch{
                 print(error)
                 try? db.rollback()
             }
         }))
+    }
+    public func writeSync(callback:@escaping (Database) throws ->Void){
+        self.writeTransactionSync(callback: { db in
+            try callback(db)
+            return true
+        })
+    }
+    
+    public func write(journal:JournalMode = .DELETE,callback:@escaping (Database) throws ->Void){
+        self.writeTransaction(callback: { db in
+            try callback(db)
+            return true
+        })
     }
     public func backup(){
         self.read { db in
@@ -160,6 +172,13 @@ public class DataBasePool{
                 print("restore fail")
             }
         }
+    }
+    private func createReadOnly() throws ->Database{
+        if let db = self.read.removeFirst(){
+            return db
+        }
+        let db = try Database(url: self.url, readOnly: true)
+        return db
     }
     deinit {
         self.wdb.close()

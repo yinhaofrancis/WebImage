@@ -502,10 +502,10 @@ extension Database{
     public func drop<T:SQLCode>(modelType:T.Type) throws{
         try self.exec(sql: "drop table if exists `\(T.tableName)`")
     }
-    public func checkpoint(type:WalMode,filename:String,frame:Int32){
+    public func checkpoint(type:WalMode,frame:Int32){
         let a = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
         a.pointee = frame
-        sqlite3_wal_checkpoint_v2(self.sqlite, filename, type.rawValue, a, a)
+        sqlite3_wal_checkpoint_v2(self.sqlite, self.uuid, type.rawValue, a, a)
         a.deallocate()
     }
     public func checkpoint(frame:Int32 = 1000){
@@ -514,6 +514,4 @@ extension Database{
     public func setJournalMode(_ model:JournalMode) throws {
         try self.exec(sql: "PRAGMA journal_mode = \(model)")
     }
-    
-    
 }

@@ -88,7 +88,7 @@ class AlphaTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        print(try Env.home())
+        print(self.pool.url)
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 //    var db:Database!
@@ -154,7 +154,7 @@ class AlphaTests: XCTestCase {
             try db.exec(sql: "drop table sds;drop table pp;")
         }
         self.pool.writeSync { db in
-            
+  
         }
     }
     func testCreateTableByModel() throws {
@@ -231,7 +231,7 @@ class AlphaTests: XCTestCase {
             XCTAssert(rr?.ob == "abc")
         }
         self.pool.writeSync { db in
-            
+
         }
     }
     func testSelect() throws{
@@ -288,11 +288,12 @@ class AlphaTests: XCTestCase {
             }
         }
         self.pool.writeSync { db in
-            
+   
         }
     }
     func testRollback() throws {
-        self.pool.write(journal: .WAL) { db in
+        self.pool.write { db in
+            
             try db.drop(modelType: model2.self)
             try db.drop(modelType: model.self)
             try db.create(obj: model())
@@ -304,20 +305,26 @@ class AlphaTests: XCTestCase {
                                            , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
             }
             try db.exec(sql: "PRAGMA journal_mode")
+            db.checkpoint(type: .Full, frame: 50)
+            
         }
-        self.pool.writeSync(journal: .WAL) { db in
+        self.pool.writeSync { db in
             for i in 0..<100{
                 try db.update(model: ["oa":100 + i], table: model.self, condition: ConditionKey(key: "a") == ConditionKey(key: "\(i)"))
+                db.checkpoint(type: .Full, frame: 1000)
             }
             try db.exec(sql: "PRAGMA journal_mode")
             throw NSError(domain: "test rollback", code: 0, userInfo: nil)
         }
-        self.pool.writeSync(journal: .WAL) { db in
+        self.pool.read { db in
             let m = model(a:0)
             let new = try db.select(model: m)
             XCTAssert(new?.oa == 1)
             print(db.url)
             try db.exec(sql: "PRAGMA journal_mode")
+        }
+        self.pool.writeSync { db in
+            
         }
     }
 }
