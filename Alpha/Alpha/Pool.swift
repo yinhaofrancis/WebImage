@@ -7,7 +7,16 @@
 
 import Foundation
 import SQLite3
+
 public class DataBasePool{
+    
+    public enum Mode{
+        case ACP
+        case WAL
+        case DELETE
+    }
+    
+    
     static public func checkDir() throws->URL{
         let name = Bundle.main.bundleIdentifier ?? "main" + ".Database"
         let url = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent(name)
@@ -55,6 +64,24 @@ public class DataBasePool{
             RunLoop.current.run()
         })
         self.thread?.start()
+        
+    }
+    public func loadMode(mode:Mode) throws {
+        try self.queue.sync {
+            switch mode {
+            case .ACP:
+                try self.wdb.synchronous(mode: .NORMAL)
+                try self.wdb.setJournalMode(.WAL)
+                try self.wdb.checkpoint(type: .Passive, log: 100, total: 300)
+            case .WAL:
+                try self.wdb.synchronous(mode: .FULL)
+                try self.wdb.setJournalMode(.WAL)
+                try self.wdb.checkpoint(type: .Passive, log: 100, total: 300)
+            case .DELETE:
+                try self.wdb.synchronous(mode: .FULL)
+                try self.wdb.setJournalMode(.DELETE)
+            }
+        }
     }
     public func config(callback:@escaping (Database) throws->Void){
         self.queue.sync(execute: DispatchWorkItem(flags: .barrier, block: {

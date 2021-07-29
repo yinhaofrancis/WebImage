@@ -33,6 +33,12 @@ public enum JournalMode:String{
     case WAL
     case OFF
 }
+public enum synchronousMode:String{
+    case EXTRA
+    case FULL
+    case NORMAL
+    case OFF
+}
 
 public class Database:Hashable{
     public static func == (lhs: Database, rhs: Database) -> Bool {
@@ -508,7 +514,7 @@ extension Database{
         let t = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
         l.pointee = log
         t.pointee = total
-        let code = sqlite3_wal_checkpoint_v2(self.sqlite, self.uuid, type.rawValue, l, t)
+        let code = sqlite3_wal_checkpoint_v2(self.sqlite, nil, type.rawValue, l, t)
         l.deallocate()
         t.deallocate()
         if SQLITE_OK != code{
@@ -545,5 +551,8 @@ extension Database{
             print("DO ROLLBACK")
             print("-------------")
         }, Unmanaged.passUnretained(self).toOpaque())
+    }
+    public func synchronous(mode:synchronousMode) throws {
+        try self.exec(sql: "PRAGMA synchronous = " + mode.rawValue)
     }
 }

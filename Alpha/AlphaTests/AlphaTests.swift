@@ -84,10 +84,7 @@ class AlphaTests: XCTestCase {
     override func setUpWithError() throws {
 //        self.db = try self.data(name: "data")
         self.pool = try self.datapool(name: "datapool")
-        self.pool.config { db in
-            try db.setJournalMode(.WAL)
-            try db.autoCheckpoint(frame: 10)
-        }
+        try self.pool.loadMode(mode: .ACP)
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
 
