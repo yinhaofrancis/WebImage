@@ -15,7 +15,6 @@
 		A925326A26AFB7520080E72D /* Backup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A925326326AFB7520080E72D /* Backup.swift */; };
 		A93271F326AFB4A5009107CA /* Alpha.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A93271E926AFB4A4009107CA /* Alpha.framework */; };
 		A93271F826AFB4A5009107CA /* AlphaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A93271F726AFB4A5009107CA /* AlphaTests.swift */; };
-		A9580AF226B120EA00530397 /* macos.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = A9580AF126B120EA00530397 /* macos.xcconfig */; };
 		A9580AF426B1381F00530397 /* Function.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9580AF326B1381F00530397 /* Function.swift */; };
 		A9D1C98826B1CEDD00F4421B /* Pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D1C98726B1CEDD00F4421B /* Pool.swift */; };
 /* End PBXBuildFile section */
@@ -201,7 +200,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A9580AF226B120EA00530397 /* macos.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
