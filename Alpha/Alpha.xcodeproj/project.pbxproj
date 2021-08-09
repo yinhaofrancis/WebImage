@@ -15,6 +15,7 @@
 		A925326A26AFB7520080E72D /* Backup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A925326326AFB7520080E72D /* Backup.swift */; };
 		A93271F326AFB4A5009107CA /* Alpha.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A93271E926AFB4A4009107CA /* Alpha.framework */; };
 		A93271F826AFB4A5009107CA /* AlphaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A93271F726AFB4A5009107CA /* AlphaTests.swift */; };
+		A944D63326C10F3100E8CEEF /* singleTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A944D63226C10F3100E8CEEF /* singleTest.swift */; };
 		A9580AF226B120EA00530397 /* macos.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = A9580AF126B120EA00530397 /* macos.xcconfig */; };
 		A9580AF426B1381F00530397 /* Function.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9580AF326B1381F00530397 /* Function.swift */; };
 		A9D1C98826B1CEDD00F4421B /* Pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D1C98726B1CEDD00F4421B /* Pool.swift */; };
@@ -42,6 +43,7 @@
 		A93271F226AFB4A5009107CA /* AlphaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AlphaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A93271F726AFB4A5009107CA /* AlphaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlphaTests.swift; sourceTree = "<group>"; };
 		A93271F926AFB4A5009107CA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A944D63226C10F3100E8CEEF /* singleTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = singleTest.swift; sourceTree = "<group>"; };
 		A9580AF126B120EA00530397 /* macos.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = macos.xcconfig; sourceTree = "<group>"; };
 		A9580AF326B1381F00530397 /* Function.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Function.swift; sourceTree = "<group>"; };
 		A9D1C98726B1CEDD00F4421B /* Pool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pool.swift; sourceTree = "<group>"; };
@@ -105,6 +107,7 @@
 			isa = PBXGroup;
 			children = (
 				A93271F726AFB4A5009107CA /* AlphaTests.swift */,
+				A944D63226C10F3100E8CEEF /* singleTest.swift */,
 				A93271F926AFB4A5009107CA /* Info.plist */,
 			);
 			path = AlphaTests;
@@ -235,6 +238,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A93271F826AFB4A5009107CA /* AlphaTests.swift in Sources */,
+				A944D63326C10F3100E8CEEF /* singleTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

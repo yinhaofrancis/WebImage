@@ -52,7 +52,7 @@ public class Database:Hashable{
     public var sqlite:OpaquePointer?
     public init(url:URL,readOnly:Bool = false) throws{
         self.url = url
-        let r = readOnly ? SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX  : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX)
+        let r = readOnly ? SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX  : (SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX)
         sqlite3_open_v2(url.path, &self.sqlite, r , nil)
         if(self.sqlite == nil){
             throw NSError(domain: "create sqlite3 fail", code: 0, userInfo: ["url":url])
@@ -336,9 +336,12 @@ extension Database{
     public static func errormsg(pointer:OpaquePointer?)->String{
         String(cString: sqlite3_errmsg(pointer))
     }
-    public func dataMaster(type:String) throws->[DataMasterInfo]{
-        let re = try self.query(sql: "select * from sqlite_master where type=?")
+    public func dataMaster(type:String,name:String? = nil) throws->[DataMasterInfo]{
+        let re = try self.query(sql: "select * from sqlite_master where type=? \(name != nil ? "and name=?" : "") ")
         re.bind(index: 1).bind(value: type)
+        if let n = name {
+            re.bind(index: 2).bind(value: n)
+        }
         var array:[DataMasterInfo] = []
         while try re.step(){
             let dmi = DataMasterInfo(type: re.column(index: 0, type: String.self).value(),
@@ -367,6 +370,9 @@ extension Database{
         }
         r.close()
         return map
+    }
+    public func tableExists(name:String) throws ->Bool{
+       return  try self.dataMaster(type: "table", name: name).count > 0
     }
     public func tableForeignKeyInfo(name:String) throws ->[String:TableForeignKeyInfo]{
         let r = try self.query(sql: "PRAGMA foreign_key_list(\(name));")
@@ -414,7 +420,35 @@ extension Database{
         }
     }
     public func create<T:SQLCode>(obj:T) throws{
-        try self.exec(sql: obj.create)
+        if try self.tableExists(name: T.tableName){
+            let column = try self.tableInfo(name: T.tableName)
+            let nowColumn = T().normalKey
+            let addC = nowColumn.filter { i in
+                !column.contains { j in
+                    (i.1.keyName != nil && j.key == i.1.keyName!) || i.0 == j.key
+                }
+            }
+            for i in addC {
+                guard let t = i.1.value else { throw NSError(domain: "alter table value is not use", code: 0, userInfo: nil) } 
+                try self.addColumn(name: T.tableName, columeName: i.1.keyName ?? i.0, ot:t , notnull: i.1.nullable, defaultValue: i.1.defaultValue ?? "null")
+            }
+        
+        }else{
+            try self.exec(sql: obj.create)
+        }
+    }
+    public func addColumn<T:OriginValue>(name:String,columeName:String,type:T.Type,notnull :Bool = false ,defaultValue:String = "") throws {
+        let typedef = notnull ? T.sqlType : T.nullType
+        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default \(defaultValue)" : "" )"
+        try self.exec(sql: sql)
+    }
+    public func addColumn(name:String,columeName:String, ot:OriginValue ,notnull:Bool = false ,defaultValue:String = "") throws {
+        let typedef = notnull ? ot.sqlType : ot.nullType
+        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default \(defaultValue)" : "" )"
+        try self.exec(sql: sql)
+    }
+    public func renameColumn(name:String,columeName:String,newName:String) throws {
+        try self.exec(sql: "ALTER TABLE \(name) RENAME COLUMN \(columeName) TO \(newName)")
     }
     public func exists<T:SQLCode>(model:T) throws ->Bool{
         let req = FetchRequest(obj: model,key:.count("*"))
@@ -554,5 +588,21 @@ extension Database{
     }
     public func synchronous(mode:synchronousMode) throws {
         try self.exec(sql: "PRAGMA synchronous = " + mode.rawValue)
+    }
+    public func setVersion(version:Int) throws {
+        try self.exec(sql: "PRAGMA user_version=\(version)")
+    }
+    public var version:Int{
+        do{
+            let rs = try self.query(sql: "PRAGMA user_version")
+            defer {
+                rs.close()
+            }
+            try rs.step()
+            let v =  rs.column(index: 0, type: Int.self).value()
+            return v
+        }catch{
+            return 0
+        }
     }
 }

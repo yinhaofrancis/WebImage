@@ -84,7 +84,7 @@ class AlphaTests: XCTestCase {
     override func setUpWithError() throws {
 //        self.db = try self.data(name: "data")
         self.pool = try self.datapool(name: "datapool")
-        try self.pool.loadMode(mode: .ACP)
+//        try self.pool.loadMode(mode: .ACP)
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
 
@@ -96,7 +96,8 @@ class AlphaTests: XCTestCase {
     var pool:DataBasePool!
 
     func testCreateAndDropTable() throws {
-        self.pool.write { db in
+
+        self.pool.writeSync { db in
             let sql = """
             CREATE TABLE pp (
                 Field1 INTEGER,
@@ -111,7 +112,7 @@ class AlphaTests: XCTestCase {
                     PRIMARY KEY(Field2)
                 );
     """
-            
+            XCTAssert(try db.tableExists(name: "pp") == false)
             try db.exec(sql: sql)
             let pp = try db.tableInfo(name: "pp")
             for i in pp {
@@ -150,12 +151,25 @@ class AlphaTests: XCTestCase {
                 XCTAssert(i.value.onUpdate == .NO_ACTION, "name fail")
                 XCTAssert(i.value.onDelete == .CASCADE, "name fail")
             }
-            try db.exec(sql: "drop table sds;drop table pp;")
-            try db.exec(sql: sql)
-            try db.exec(sql: "drop table sds;drop table pp;")
-        }
-        self.pool.writeSync { db in
-  
+            try db.renameColumn(name: "pp", columeName: "Field1", newName: "F11")
+            try db.addColumn(name: "pp", columeName: "F12", type: Int.self, notnull: true , defaultValue: "d")
+            try db.addColumn(name: "pp", columeName: "F13", type: String.self)
+            let renameresult = try db.tableInfo(name: "pp").contains { v in
+                v.key == "F11"
+            }
+            let renameresult2 = try db.tableInfo(name: "pp").contains { v in
+                v.key == "F12"
+            }
+            let renameresult3 = try db.tableInfo(name: "pp").contains { v in
+                v.key == "F13"
+            }
+            XCTAssert(try db.tableExists(name: "pp"))
+            XCTAssert(renameresult)
+            XCTAssert(renameresult2)
+            XCTAssert(renameresult3)
+//            try db.exec(sql: "drop table sds;drop table pp;")
+//            try db.exec(sql: sql)
+//            try db.exec(sql: "drop table sds;drop table pp;")
         }
     }
     func testCreateTableByModel() throws {
@@ -323,6 +337,54 @@ class AlphaTests: XCTestCase {
             print(db.url)
             try db.exec(sql: "PRAGMA journal_mode")
         }
+        self.pool.writeSync { db in
+            
+        }
+    }
+    func testAlterTable() throws {
+        
+        self.pool.write { db in
+            try db.drop(modelType: model2.self)
+            try db.create(obj: model2())
+            struct model3:SQLCode{
+                static var tableName: String = "model2"
+                
+                @PrimaryKey
+                @Key("Identify")
+                @Column(\model3.a2)
+                var a2:Int = 0
+                
+                
+                @ForeignKey(remoteTable: "model", remoteKey: "a", onDelete: .SET_DEFAULT, onUpdate: .CASCADE)
+                @Default("0")
+                @Key("IdentifyRef")
+                @Column(\model3.a)
+                var a:Int = 0
+                
+                @Default("null")
+                @Column(\model3.m)
+                var m:String = ""
+                
+                
+                @NullableColumn(\model3.n)
+                var n:String? = ""
+                
+                @ForeignKey(remoteTable: "model", remoteKey: "b_key", onDelete: .NO_ACTION, onUpdate: .NO_ACTION)
+                @Column(\model3.b)
+                var b:String = ""
+                
+            }
+            try db.create(obj: model3())
+            let renameresult = try db.tableInfo(name: "model2").contains { v in
+                v.key == "m"
+            }
+            let renameresult2 = try db.tableInfo(name: "model2").contains { v in
+                v.key == "n"
+            }
+            XCTAssert(renameresult)
+            XCTAssert(renameresult2)
+        }
+
         self.pool.writeSync { db in
             
         }

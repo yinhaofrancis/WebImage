@@ -26,12 +26,21 @@ public protocol SqlType{
     var remoteTable:String? { get }
     var remoteKey:String? { get }
     var keyName:String? { get }
+    var nullable:Bool { get }
+    var defaultValue:String? { get }
     var onDelete:ForeignKeyAction? { get }
     var onUpdate:ForeignKeyAction? { get }
     var value:OriginValue? { get }
     var path:AnyKeyPath? { get }
 }
-
+extension OriginValue{
+    public var nullType:String{
+        self.sqlType.components(separatedBy: " ").first!
+    }
+    public static var nullType:String{
+        self.sqlType.components(separatedBy: " ").first!
+    }
+}
 extension Int:OriginValue {
     public var sqlType:String{
         return "INTEGER NOT NULL"
@@ -102,10 +111,16 @@ extension Float:OriginValue {
 }
 @propertyWrapper
 public struct Unique<T:SqlType>:SqlType,CustomDebugStringConvertible{
+    public var defaultValue: String?{
+        wrappedValue.defaultValue
+    }
+    
     public var debugDescription: String{
         "\(wrappedValue)"
     }
-    
+    public var nullable: Bool{
+        wrappedValue.nullable
+    }
     public var path: AnyKeyPath? {
         return wrappedValue.path
     }
@@ -143,6 +158,12 @@ public struct Unique<T:SqlType>:SqlType,CustomDebugStringConvertible{
 }
 @propertyWrapper
 public struct PrimaryKey<T:SqlType>:SqlType,CustomDebugStringConvertible{
+    public var defaultValue: String?{
+        wrappedValue.defaultValue
+    }
+    public var nullable: Bool{
+        wrappedValue.nullable
+    }
     public var debugDescription: String{
         "\(wrappedValue)"
     }
@@ -183,6 +204,12 @@ public struct PrimaryKey<T:SqlType>:SqlType,CustomDebugStringConvertible{
 }
 @propertyWrapper
 public struct Default<T:SqlType>:SqlType,CustomDebugStringConvertible{
+    
+
+    public var nullable: Bool{
+        wrappedValue.nullable
+    }
+    
     public var debugDescription: String{
         "\(wrappedValue)"
     }
@@ -194,13 +221,13 @@ public struct Default<T:SqlType>:SqlType,CustomDebugStringConvertible{
     }
     
     public var sqlType: String{
-        wrappedValue.sqlType + "  DEFAULT \(self.defaultvalue)"
+        wrappedValue.sqlType + "  DEFAULT \(self.defaultValue!)"
     }
     public var wrappedValue:T
-    public var defaultvalue:String
+    public var defaultValue:String?
     public init(wrappedValue:T, _ value:String){
         self.wrappedValue = wrappedValue
-        self.defaultvalue = value
+        self.defaultValue = value
     }
     public var primaryKey: Bool {
         wrappedValue.primaryKey
@@ -228,7 +255,12 @@ public struct Key<T:SqlType>:SqlType,CustomDebugStringConvertible{
     public var debugDescription: String{
         "\(wrappedValue)"
     }
-    
+    public var defaultValue: String?{
+        wrappedValue.defaultValue
+    }
+    public var nullable: Bool{
+        wrappedValue.nullable
+    }
     public var path: AnyKeyPath?{
         return wrappedValue.path
     }
@@ -269,6 +301,9 @@ public struct Column<T:OriginValue>:SqlType,CustomDebugStringConvertible{
     public var debugDescription: String{
         "\(wrappedValue)"
     }
+    public var defaultValue: String?{
+        nil
+    }
     public var path: AnyKeyPath?
     public var value: OriginValue? {
         return self.wrappedValue
@@ -276,7 +311,9 @@ public struct Column<T:OriginValue>:SqlType,CustomDebugStringConvertible{
     public var sqlType: String{
         wrappedValue.sqlType
     }
-    
+    public var nullable: Bool{
+        return false
+    }
     
     public var wrappedValue:T
     public init(wrappedValue:T,_ keyPath:AnyKeyPath){
@@ -306,6 +343,12 @@ public struct Column<T:OriginValue>:SqlType,CustomDebugStringConvertible{
 }
 @propertyWrapper
 public struct NullableColumn<T:OriginValue>:SqlType,CustomDebugStringConvertible{
+    public var nullable: Bool{
+        return true
+    }
+    public var defaultValue: String?{
+        nil
+    }
     public var debugDescription: String{
         "\(String(describing: wrappedValue))"
     }
@@ -314,7 +357,7 @@ public struct NullableColumn<T:OriginValue>:SqlType,CustomDebugStringConvertible
         wrappedValue
     }
     public var sqlType: String{
-        (wrappedValue?.sqlType ?? T.sqlType).components(separatedBy: " ").first!
+        wrappedValue?.nullType ?? T.nullType
     }
     
     
@@ -348,6 +391,10 @@ public struct NullableColumn<T:OriginValue>:SqlType,CustomDebugStringConvertible
 
 @propertyWrapper
 public struct ForeignKey<T:SqlType>:SqlType{
+    public var defaultValue: String?{
+        wrappedValue.defaultValue
+    }
+    
     public var path: AnyKeyPath? {
         return wrappedValue.path
     }
@@ -357,7 +404,9 @@ public struct ForeignKey<T:SqlType>:SqlType{
     public var sqlType: String{
         wrappedValue.sqlType
     }
-    
+    public var nullable: Bool{
+        wrappedValue.nullable
+    }
     public var wrappedValue:T
     public var remoteTable: String?
     public var onDelete: ForeignKeyAction?
