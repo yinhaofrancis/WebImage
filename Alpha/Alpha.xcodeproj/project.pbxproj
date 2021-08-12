@@ -16,6 +16,7 @@
 		A93271F326AFB4A5009107CA /* Alpha.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A93271E926AFB4A4009107CA /* Alpha.framework */; };
 		A93271F826AFB4A5009107CA /* AlphaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A93271F726AFB4A5009107CA /* AlphaTests.swift */; };
 		A9580AF426B1381F00530397 /* Function.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9580AF326B1381F00530397 /* Function.swift */; };
+		A96E090626C518CF0034568D /* OtherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A96E090526C518CF0034568D /* OtherTests.swift */; };
 		A9D1C98826B1CEDD00F4421B /* Pool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D1C98726B1CEDD00F4421B /* Pool.swift */; };
 /* End PBXBuildFile section */
 
@@ -43,6 +44,7 @@
 		A93271F926AFB4A5009107CA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A9580AF126B120EA00530397 /* macos.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = macos.xcconfig; sourceTree = "<group>"; };
 		A9580AF326B1381F00530397 /* Function.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Function.swift; sourceTree = "<group>"; };
+		A96E090526C518CF0034568D /* OtherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherTests.swift; sourceTree = "<group>"; };
 		A9D1C98726B1CEDD00F4421B /* Pool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pool.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -104,6 +106,7 @@
 			isa = PBXGroup;
 			children = (
 				A93271F726AFB4A5009107CA /* AlphaTests.swift */,
+				A96E090526C518CF0034568D /* OtherTests.swift */,
 				A93271F926AFB4A5009107CA /* Info.plist */,
 			);
 			path = AlphaTests;
@@ -232,6 +235,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A96E090626C518CF0034568D /* OtherTests.swift in Sources */,
 				A93271F826AFB4A5009107CA /* AlphaTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

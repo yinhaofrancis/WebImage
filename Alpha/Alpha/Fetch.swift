@@ -214,7 +214,11 @@ public class FetchRequest<T:SQLCode>{
         return sql
     }
 }
-public class Condition{
+public class Condition:Equatable{
+    public static func == (lhs: Condition, rhs: Condition) -> Bool {
+        Unmanaged.passUnretained(lhs).toOpaque() == Unmanaged.passUnretained(rhs).toOpaque()
+    }
+    
     var relate:String
     var left:ConditionKey
     var right:ConditionKey
@@ -228,7 +232,7 @@ public class Condition{
     public static func || (lc:Condition,rc:Condition)->Condition{
         var c = lc
         while c.next != nil {
-            c = lc.next!
+            c = c.next!
         }
         c.next = rc
         rc.nextOp = "OR"
@@ -237,7 +241,7 @@ public class Condition{
     public static func && (lc:Condition,rc:Condition)->Condition{
         var c = lc
         while c.next != nil {
-            c = lc.next!
+            c = c.next!
         }
         c.next = rc
         rc.nextOp = "AND"
@@ -295,6 +299,9 @@ public struct ConditionKey:ExpressibleByStringLiteral {
     }
     public static func == (lk:ConditionKey,rk:ConditionKey)->Condition{
         Condition(l: lk, relate: " = ", r: rk)
+    }
+    public static func <> (lk:ConditionKey,rk:ConditionKey)->Condition{
+        Condition(l: lk, relate: " <> ", r: rk)
     }
     public static func >= (lk:ConditionKey,rk:ConditionKey)->Condition{
         Condition(l: lk, relate: " >= ", r: rk)
