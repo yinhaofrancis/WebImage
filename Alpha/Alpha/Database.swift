@@ -430,7 +430,7 @@ extension Database{
             }
             for i in addC {
                 guard let t = i.1.value else { throw NSError(domain: "alter table value is not use", code: 0, userInfo: nil) } 
-                try self.addColumn(name: T.tableName, columeName: i.1.keyName ?? i.0, ot:t , notnull: i.1.nullable, defaultValue: i.1.defaultValue ?? "null")
+                try self.addColumn(name: T.tableName, columeName: i.1.keyName ?? i.0, ov:t , notnull: i.1.nullable, defaultValue: i.1.defaultValue ?? "null")
             }
         
         }else{
@@ -442,8 +442,8 @@ extension Database{
         let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default \(defaultValue)" : "" )"
         try self.exec(sql: sql)
     }
-    public func addColumn(name:String,columeName:String, ot:OriginValue ,notnull:Bool = false ,defaultValue:String = "") throws {
-        let typedef = notnull ? ot.sqlType : ot.nullType
+    public func addColumn(name:String,columeName:String, ov:OriginValue ,notnull:Bool = false ,defaultValue:String = "") throws {
+        let typedef = notnull ? ov.sqlType : ov.nullType
         let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default \(defaultValue)" : "" )"
         try self.exec(sql: sql)
     }
