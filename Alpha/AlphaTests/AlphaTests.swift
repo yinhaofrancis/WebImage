@@ -169,6 +169,9 @@ class AlphaTests: XCTestCase {
         }
     }
     func testCreateTableByModel() throws {
+        self.pool.config { db in
+            db.foreignKey = true
+        }
         self.pool.write { db in
             struct model3:SQLCode{
                 static var tableName: String =  "model3"
