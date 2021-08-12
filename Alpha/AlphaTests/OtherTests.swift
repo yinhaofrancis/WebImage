@@ -29,7 +29,7 @@ class OtherTests: XCTestCase {
                 Condition.notBetween(lk: "hh", s: "300", e: "400") ||
                 Condition.like(lk: "ii", rk: "12312") &&
                 Condition.match(lk: "kk", rk: "sdadada") &&
-                Condition.exist(lk: "ll", rk: "33434")
+                Condition.exists(lk: "ll", rk: "33434")
         print(a.conditionCode)
        
     }
