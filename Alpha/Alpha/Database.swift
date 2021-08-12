@@ -7,7 +7,7 @@
 
 import Foundation
 import SQLite3
-
+import SQLite3.Ext
 public struct WalMode:RawRepresentable{
     public init?(rawValue: Int32) {
         self.rawValue = rawValue
@@ -101,6 +101,21 @@ public class Database:Hashable{
         }
         public func columnName(index:Int)->String{
             String(cString: sqlite3_column_name(self.stmt, Int32(index)))
+        }
+        public func type(index:Int32)->DBDataType{
+            let a = sqlite3_column_type(self.stmt, index)
+            switch a {
+            case SQLITE_INTEGER:
+                return .Integer
+            case SQLITE_FLOAT:
+                return .Float
+            case SQLITE_TEXT:
+                return .Text
+            case SQLITE_BLOB:
+                return .Blob
+            default:
+                return .Null
+            }
         }
         public func close(){
             sqlite3_finalize(self.stmt)
@@ -274,6 +289,7 @@ extension Database{
         #endif
         var error:UnsafeMutablePointer<CChar>?
         sqlite3_exec(self.sqlite, sql, { arg, len, v,col in
+            #if DEBUG
             print("<<<<<<<<<<<<")
             for i in 0 ..< len{
                 let vstr = v?[Int(i)] == nil ? "NULL" : String(cString: v![Int(i)]!)
@@ -281,6 +297,7 @@ extension Database{
                 print("\(cStr):\(vstr)")
             }
             print(">>>>>>>>>>>>>")
+            #endif
             return 0
         }, nil, &error)
         if let e = error{
