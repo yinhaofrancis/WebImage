@@ -276,9 +276,9 @@ public class Condition:Equatable{
     }
     public var conditionCode:String{
         if let n = self.next , let o = n.nextOp{
-            return "\(left.key)\(self.relate)\(right.key) \(o) \(n.conditionCode)".replacingOccurrences(of: "\\", with: "")
+            return "\(left.key)\(self.relate)\(right.key) \(o) \(n.conditionCode)"
         }else{
-            return "\(left.key)\(self.relate)\(right.key)".replacingOccurrences(of: "\\", with: "")
+            return "\(left.key)\(self.relate)\(right.key)"
         }
     }
 }
