@@ -72,11 +72,11 @@ public class DataBasePool{
             case .ACP:
                 try self.wdb.synchronous(mode: .NORMAL)
                 try self.wdb.setJournalMode(.WAL)
-                try self.wdb.checkpoint(type: .Passive, log: 100, total: 300)
+                try self.wdb.checkpoint(type: .passive, log: 100, total: 300)
             case .WAL:
                 try self.wdb.synchronous(mode: .FULL)
                 try self.wdb.setJournalMode(.WAL)
-                try self.wdb.checkpoint(type: .Passive, log: 100, total: 300)
+                try self.wdb.checkpoint(type: .passive, log: 100, total: 300)
             case .DELETE:
                 try self.wdb.synchronous(mode: .FULL)
                 try self.wdb.setJournalMode(.DELETE)

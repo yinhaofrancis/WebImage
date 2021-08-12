@@ -18,10 +18,10 @@ public struct WalMode:RawRepresentable{
     public typealias RawValue = Int32
     
 
-    public static var Passive   = WalMode(rawValue: SQLITE_CHECKPOINT_PASSIVE)!
-    public static var Full      = WalMode(rawValue: SQLITE_CHECKPOINT_FULL)!
-    public static var Restart   = WalMode(rawValue: SQLITE_CHECKPOINT_RESTART)!
-    public static var Truncate  = WalMode(rawValue: SQLITE_CHECKPOINT_TRUNCATE)!
+    public static var passive   = WalMode(rawValue: SQLITE_CHECKPOINT_PASSIVE)!
+    public static var full      = WalMode(rawValue: SQLITE_CHECKPOINT_FULL)!
+    public static var restart   = WalMode(rawValue: SQLITE_CHECKPOINT_RESTART)!
+    public static var truncate  = WalMode(rawValue: SQLITE_CHECKPOINT_TRUNCATE)!
     
 }
 
@@ -422,7 +422,7 @@ extension Database{
     public func create<T:SQLCode>(obj:T) throws{
         if try self.tableExists(name: T.tableName){
             let column = try self.tableInfo(name: T.tableName)
-            let nowColumn = T().normalKey
+            let nowColumn = T().fullKey
             let addC = nowColumn.filter { i in
                 !column.contains { j in
                     (i.1.keyName != nil && j.key == i.1.keyName!) || i.0 == j.key
@@ -432,6 +432,23 @@ extension Database{
                 guard let t = i.1.value else { throw NSError(domain: "alter table value is not use", code: 0, userInfo: nil) } 
                 try self.addColumn(name: T.tableName, columeName: i.1.keyName ?? i.0, ov:t , notnull: i.1.nullable, defaultValue: i.1.defaultValue ?? "null")
             }
+            let removeC = column.filter { j in
+                !nowColumn.contains(where: { i in
+                    (i.1.keyName != nil && j.key == i.1.keyName!) || i.0 == j.key
+                })
+            }
+            if removeC.count > 0{
+                self.foreignKey = false
+                try self.alterTableName(name: T.tableName, newName: "\(T.tableName)_temp");
+                try self.exec(sql: obj.create)
+                let key = obj.fullKey.map({$0.1.keyName ?? $0.0}).joined(separator: ",")
+                let copySql = "INSERT INTO \(T.tableName)  SELECT \(key) FROM \("\(T.tableName)_temp")"
+                try self.exec(sql: copySql)
+                try self.exec(sql: "drop table \(T.tableName)_temp")
+                self.foreignKey = true
+                print(try self.integrityCheck(table: T.tableName))
+                
+            }
         
         }else{
             try self.exec(sql: obj.create)
@@ -439,12 +456,16 @@ extension Database{
     }
     public func addColumn<T:OriginValue>(name:String,columeName:String,type:T.Type,notnull :Bool = false ,defaultValue:String = "") throws {
         let typedef = notnull ? T.sqlType : T.nullType
-        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default \(defaultValue)" : "" )"
+        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default `\(defaultValue)`" : "" )"
         try self.exec(sql: sql)
     }
     public func addColumn(name:String,columeName:String, ov:OriginValue ,notnull:Bool = false ,defaultValue:String = "") throws {
         let typedef = notnull ? ov.sqlType : ov.nullType
-        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default \(defaultValue)" : "" )"
+        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default `\(defaultValue)`" : "" )"
+        try self.exec(sql: sql)
+    }
+    public func alterTableName(name:String,newName:String) throws {
+        let sql = "ALTER TABLE \(name) RENAME TO \(newName)"
         try self.exec(sql: sql)
     }
     public func renameColumn(name:String,columeName:String,newName:String) throws {

@@ -112,7 +112,6 @@ class AlphaTests: XCTestCase {
                     PRIMARY KEY(Field2)
                 );
     """
-            XCTAssert(try db.tableExists(name: "pp") == false)
             try db.exec(sql: sql)
             let pp = try db.tableInfo(name: "pp")
             for i in pp {
@@ -167,9 +166,6 @@ class AlphaTests: XCTestCase {
             XCTAssert(renameresult)
             XCTAssert(renameresult2)
             XCTAssert(renameresult3)
-//            try db.exec(sql: "drop table sds;drop table pp;")
-//            try db.exec(sql: sql)
-//            try db.exec(sql: "drop table sds;drop table pp;")
         }
     }
     func testCreateTableByModel() throws {
@@ -345,7 +341,27 @@ class AlphaTests: XCTestCase {
         
         self.pool.write { db in
             try db.drop(modelType: model2.self)
+            try db.drop(modelType: model.self)
+            try db.create(obj: model())
             try db.create(obj: model2())
+            
+            for i in 0 ..< 100 {
+                try db.insert(model: model(a: i,
+                                           b: "ddd\(i)",
+                                           c: "dd\(i * 2)".data(using: .utf8)!
+                                           , d: 0.9 + Double(i),oa: i + 1,of: 10 - Int32(i)))
+            }
+            
+            for i in 0 ..< 100 {
+                try db.insert(model: model2(a2: i, a: i,b: "ddd\(i)"))
+            }
+            struct model0:SQLCode{
+                static var tableName: String = "model"
+                
+                @PrimaryKey
+                @Column(\model.a)
+                var a:Int = 0
+            }
             struct model3:SQLCode{
                 static var tableName: String = "model2"
                 
@@ -374,6 +390,16 @@ class AlphaTests: XCTestCase {
                 var b:String = ""
                 
             }
+            
+            
+            struct model4:SQLCode{
+                static var tableName: String = "model2"
+                
+                @PrimaryKey
+                @Key("Identify")
+                @Column(\model4.a2)
+                var a2:Int = 0
+            }
             try db.create(obj: model3())
             let renameresult = try db.tableInfo(name: "model2").contains { v in
                 v.key == "m"
@@ -383,8 +409,28 @@ class AlphaTests: XCTestCase {
             }
             XCTAssert(renameresult)
             XCTAssert(renameresult2)
+            
+            try db.create(obj: model4())
+            try db.create(obj: model0())
+            let renameresult3 = try db.tableInfo(name: "model").contains { v in
+                v.key != "m" && v.key != "m" && v.key != "dentifyRef" && v.key != "b"
+            }
+            XCTAssert(renameresult3)
+    
         }
 
+        self.pool.writeSync { db in
+            
+        }
+    }
+    func testVersion() throws{
+        self.pool.write { db in
+            let version = db.version + 1
+            try db.setVersion(version: version)
+            XCTAssert(version == db.version)
+            print("_+_+_+_+_+_")
+            print(version,db.version)
+        }
         self.pool.writeSync { db in
             
         }
