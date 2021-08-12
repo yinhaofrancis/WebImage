@@ -259,16 +259,16 @@ public class Condition{
         Condition(l: lk, relate: " EXIST ", r: rk)
     }
     public static func between(lk:ConditionKey,s:ConditionKey,e:ConditionKey)->Condition{
-        Condition(l: lk, relate: " BETWEEN ", r: ConditionKey(key: s.key + " and " + e.key))
+        Condition(l: lk, relate: " BETWEEN ", r: ConditionKey(key: s.key + " AND " + e.key))
     }
     public static func notBetween(lk:ConditionKey,s:ConditionKey,e:ConditionKey)->Condition{
-        Condition(l: lk, relate: " NOT BETWEEN ", r: ConditionKey(key: s.key + " and " + e.key))
+        Condition(l: lk, relate: " NOT BETWEEN ", r: ConditionKey(key: s.key + " AND " + e.key))
     }
     public static func isNull(lk:ConditionKey)->Condition{
-        Condition(l: lk, relate: " IS Null ", r: ConditionKey(key:""))
+        Condition(l: lk, relate: " IS NULL ", r: ConditionKey(key:""))
     }
     public static func isNotNull(lk:ConditionKey)->Condition{
-        Condition(l: lk, relate: " IS Not Null ", r: ConditionKey(key:""))
+        Condition(l: lk, relate: " IS NOT NULL ", r: ConditionKey(key:""))
     }
     public var conditionCode:String{
         if let n = self.next , let o = n.nextOp{
