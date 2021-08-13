@@ -437,8 +437,18 @@ public struct ForeignKey<T:SqlType>:SqlType{
 
 extension SQLCode{
     
-    private var columnMap:[(label:String,value:SqlType)]{
-        return Mirror(reflecting: self).children.filter({$0.value is SqlType}).map { i in
+    public var columnMap:[(label:String,value:SqlType)]{
+       
+        var array = self.mirrorToMap(mirror: Mirror(reflecting: self))
+        var m = Mirror(reflecting: self).superclassMirror
+        while let a = m {
+            array.append(contentsOf: self.mirrorToMap(mirror: a))
+            m = a.superclassMirror
+        }
+        return array
+    }
+    private func mirrorToMap(mirror:Mirror)->[(label:String,value:SqlType)]{
+        mirror.children.filter({$0.value is SqlType}).map { i in
             let label = i.label!
             let lab = label.starts(with: "_") ? String(label[label.index(after: label.startIndex) ..< label.endIndex]) : label
             return (label:lab,value:i.value as! SqlType)
@@ -575,11 +585,11 @@ extension SQLCode{
     public static func conditionCode(_ i: (String, SqlType)) -> String {
         let key = i.1.keyName ?? i.0
         if i.1.value is Data{
-            return "\(key) == @\(i.0)"
+            return "\(key) = @\(i.0)"
         }else if i.1.value is String{
-            return "\(key) == @\(i.0)"
+            return "\(key) = @\(i.0)"
         }else{
-            return "\(key) == \(i.1.value!)"
+            return "\(key) = \(i.1.value!)"
         }
     }
     
@@ -593,7 +603,7 @@ extension SQLCode{
         }
     }
     var primaryConditionBindMap:[String:OriginValue]{
-        self.primaryKey.filter { i in
+        return self.primaryKey.filter { i in
             i.1.value != nil && (i.1.value is Data || i.1.value is String)
         }.reduce(into: [:]) { r, k in
             r[k.0] = k.1.value!

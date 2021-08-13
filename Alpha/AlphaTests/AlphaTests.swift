@@ -438,31 +438,6 @@ class AlphaTests: XCTestCase {
             
         }
     }
-    func testDBQueue() throws{
-        self.pool.write { db in
-            try db.drop(modelType: model.self)
-            try db.create(obj: model())
-            for i in 0 ..< 10 {
-                try db.insert(model: model(a: i,
-                                           b: "ddd\(i)",
-                                           c: "dd\(i * 2)".data(using: .utf8)!,
-                                           d: 0.9 + Double(i),
-                                           oa: i + 1,
-                                           of: 10 - Int32(i)))
-            }
-            let a = try SQLResult.query(db: db, sql: "select * from Model")
-            print(a)
-            for i in 0 ..< a.count{
-                let p = a[i].b_key?.value(type: String.self)
-                print(p!)
-                let q = a[i].d?.value(type: Double.self)
-                print(q!)
-            }
-        }
-        self.pool.writeSync { db in
-            
-        }
-    }
 }
 public class Env{
     public static func home()throws->URL{

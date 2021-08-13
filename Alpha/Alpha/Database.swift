@@ -492,6 +492,7 @@ extension Database{
         let req = FetchRequest(obj: model,key:.count("*"))
         req.loadKeyMap(map: model.primaryConditionBindMap)
         let r = try self.query(sql: req.sql)
+        req.doSelectBind(result: r)
         try r.step()
         let c = r.column(index: 0, type: Int32.self).value() > 0
         r.close()
