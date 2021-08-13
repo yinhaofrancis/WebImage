@@ -250,8 +250,6 @@ public class Model:NSObject,SQLCode{
             if ctype == "Td" || ctype == "Tf" {
                 result.append((key,modelSqlType(sqlType: "FLOAT",value: self.value(forKey: key) as! Double)))
             }
-            print(key,att)
-
         }
         result.append(("modelId",modelSqlType(sqlType: "TEXT",primaryKey:true, value: self.modelId)))
         return result

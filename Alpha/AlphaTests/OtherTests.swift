@@ -74,7 +74,7 @@ class OtherTests: XCTestCase {
         self.poor.writeSync { db in
             let t = try SQLResult.query(db: db, req: FetchRequest<mk>.init(table: mk.self))
 //            
-            print(t)
+//            print(t)
 //
             for i in t{
                 i.a = "100"
@@ -85,7 +85,7 @@ class OtherTests: XCTestCase {
                 try SQLResult.save(db: db, model: i)
             }
             let a = try SQLResult.query(db: db, req: FetchRequest<mk>.init(table: mk.self))
-            print(a)
+//            print(a)
             for i in a{
                 XCTAssert(i.a == "100")
                 XCTAssert(i.b == 9)
