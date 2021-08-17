@@ -244,13 +244,14 @@ public class Model:NSObject,SQLCode{
                 }
             }
             
-            if ctype == "Tc" || ctype == "Ts" || ctype == "Ts" || ctype == "Ti" || ctype == "Tq"{
+            if ctype == "Tc" || ctype == "Ts" || ctype == "Ti" || ctype == "Tq"{
                 result.append((key,modelSqlType(sqlType: "INTEGER",value: self.value(forKey: key) as! Int )))
             }
             if ctype == "Td" || ctype == "Tf" {
                 result.append((key,modelSqlType(sqlType: "FLOAT",value: self.value(forKey: key) as! Double)))
             }
         }
+        
         result.append(("modelId",modelSqlType(sqlType: "TEXT",primaryKey:true, value: self.modelId)))
         return result
     }
