@@ -55,4 +55,66 @@ class HeapTest: XCTestCase {
             XCTAssert(array[i] <= array[i + 1])
         }
     }
+    func testRemoveHeap() throws {
+        let a = MinHeap<UInt32>()
+        
+   
+        for _ in 0..<10 {
+            a.insert(object: arc4random() % 100)
+            print(a)
+        }
+        for _ in 0..<10{
+            a.remove(node: a.firstNode)
+            print(a)
+        }
+    }
+    func testCache() throws{
+        let cache = Cache<Int>()
+
+        let group = DispatchGroup()
+        for i in 0 ..< 100{
+            group.enter()
+            DispatchQueue.global().async {
+                cache.setContent(key: "\(i)", content: i)
+                group.leave()
+            }
+            
+        }
+        for i in 0 ..< 100000 {
+            group.enter()
+            DispatchQueue.global().async {
+                let a = cache.content(key: "\(i % 100)")
+                XCTAssert(a == i % 100)
+                group.leave()
+            }
+        }
+        let a = XCTestExpectation(description: "time out")
+        group.notify(queue: .main) {
+            a.fulfill()
+            
+            print("finish")
+        }
+        self.wait(for: [a], timeout: 1000)
+    }
+    func testWrite(){
+        
+        measure {
+            let cache = Cache<Data>()
+            for i in 0 ..< 1000000{
+                cache.setContent(key: "\(i % 60000)", content: "dasdasdad".data(using: .utf8)!)
+            }
+        }
+    }
+    func testRead(){
+        let cache = Cache<Data>()
+        for i in 0 ..< cache.maxCount {
+            cache.setContent(key: "\(i)", content: "dasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgkdasdadadadadfajhsgdjhfasgdfjaksgdfajksfgaksjhdfgajskdfgajsdfgaskjdfgk".data(using: .utf8)!)
+        }
+        measure {
+            for i in 0 ..< 1000000{
+                cache.content(key: "\(arc4random() % 70000)")
+            }
+        }
+    }
+    
 }
