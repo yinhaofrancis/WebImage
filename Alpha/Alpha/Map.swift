@@ -299,7 +299,10 @@ public class MinHeap<T:Comparable>:Heap<T>{
         super.init(compare: {$0>$1})
     }
 }
-public class Priority<T:Equatable>:Comparable{
+public protocol MemorySizeAble{
+    var memorySize:Int64 { get }
+}
+public class Priority<T:Equatable & MemorySizeAble>:Comparable{
     public static func == (lhs: Priority<T>, rhs: Priority<T>) -> Bool {
         lhs.count == rhs.count
     }
@@ -326,35 +329,33 @@ public class Priority<T:Equatable>:Comparable{
     }
 }
 
-public class Cache<T:Equatable>{
-    var minHeap:MinHeap<Priority<T>> = MinHeap()
-    var map:Map<String,Priority<T>> = Map()
-    var queue = DispatchQueue.global()
-    public var maxCount:Int = 50000
-    public func setContent(key:String,content:T){
-        if self.contain(key: key){
-            let p = self.map[key]
-            p?.content = content
-        }else{
-            let p = Priority(content: content, name: key)
-            self.map[key] = p
-            self.minHeap.insert(object: p)
-            self.queue.async {
-                if self.maxCount < self.minHeap.count{
-                    let a = self.minHeap.remove()
-                    self.map[a.name] = nil
-                }
-            }
-        }
-        
+extension Data:MemorySizeAble {
+    public var memorySize: Int64 {
+        Int64(self.count)
     }
-    public func contain(key:String)->Bool{
-        self.map[key] != nil
+}
+extension Int:MemorySizeAble{
+    public var memorySize: Int64{
+        #if arch(arm64)
+            return 8
+        #elseif arch(x86_64)
+            return 8
+        #else
+            return 4
+        #endif
     }
-    public func content(key:String)->T?{
-        let p = map[key]
-        p?.count += 1
-        p?.date = Date()
-        return p?.content
+}
+extension Int32:MemorySizeAble{
+    public var memorySize: Int64{
+        return 4
     }
+}
+extension Int64:MemorySizeAble{
+    public var memorySize: Int64{
+        return 8
+    }
+}
+
+public class LinkBTree<T:Equatable>{
+    
 }
