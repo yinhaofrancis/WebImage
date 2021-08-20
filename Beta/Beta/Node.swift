@@ -62,6 +62,7 @@ public struct Edge{
         Edge(left: left, right: right, top: top, bottom: bottom)
     }
 }
+
 public protocol Drawable{
     var drawable:CALayer { get }
 }
@@ -75,7 +76,7 @@ public protocol Node:Drawable,AnyObject {
     var margin:Edge { get }
     var frame:CGRect { get set }
     func layout()
-    var parent:NodeGroup? { get set }
+    var parent:Node? { get set }
     var nodes:[Node] { get }
 }
 
@@ -92,17 +93,28 @@ public protocol NodeGroup:Node{
     var height:Demainsion { get set }
 }
 
-
+extension Node{
+    func matchParent(){
+        self.nodes.filter({$0.height.isMatchParent()}).forEach { n in
+            n.frame.size.height = self.frame.height
+        }
+        self.nodes.filter({$0.width.isMatchParent()}).forEach { n in
+            n.frame.size.width = self.frame.width
+        }
+    }
+}
 
 public enum Axis{
     case vertical
     case horizontal
 }
+
 public class LinearLayout:NodeGroup{
+        
     
     public var drawable: CALayer = CALayer()
 
-    public weak var parent: NodeGroup?
+    public weak var parent: Node?
     
     public var frame: CGRect = .zero
     
@@ -119,18 +131,26 @@ public class LinearLayout:NodeGroup{
     public var nodes: [Node]
     
     public func layout() {
-        self.nodes.filter({$0.height.isMatchParent()}).forEach { n in
-            n.frame.size.height = self.frame.height
-        }
-        self.nodes.filter({$0.width.isMatchParent()}).forEach { n in
-            n.frame.size.width = self.frame.width
+        
+        self.matchParent()
+        
+        let sumw = self.nodes.reduce(0, {$0 + $1.widthWeight})
+        let sumh = self.nodes.reduce(0, {$0 + $1.heightWeight})
+        let delta:CGFloat = (self.direction == .vertical ? self.frame.height : self.frame.width) - self.nodes.reduce(0) { r, n in
+            switch self.direction{
+            case .vertical:
+                return r + n.height.ptValue()
+            case .horizontal:
+                return r + n.width.ptValue()
+            }
         }
         self.nodes.filter({$0.width.ptValue() > 0}).forEach { n in
-            n.frame.size.width = n.width.ptValue()
+            n.frame.size.width = n.width.ptValue() + (sumw == 0 ? 0 : (self.direction == .horizontal ? delta * n.widthWeight / sumw : 0))
         }
         self.nodes.filter({$0.height.ptValue() > 0}).forEach { n in
-            n.frame.size.height = n.height.ptValue()
+            n.frame.size.height = n.height.ptValue() + (sumh == 0 ? 0 : (self.direction == .vertical ? delta * n.heightWeight / sumh : 0))
         }
+        
         
         for i in nodes {
             i.layout()
@@ -182,7 +202,6 @@ public class LinearLayout:NodeGroup{
     
     public var margin: Edge = .value()
 }
-
 public class Layer:CALayer,Node{
     public var drawable: CALayer{
         return self
@@ -213,8 +232,10 @@ public class Layer:CALayer,Node{
     public func layout() {
         
     }
-    public var parent: NodeGroup?
+    public var parent: Node?
 }
+
+
 
 public class Container:CALayer{
     var drawLayer:CALayer?

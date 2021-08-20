@@ -13,6 +13,7 @@
 		A9AFE6BE26CE5B1D00A5B9FF /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A9AFE6BC26CE5B1D00A5B9FF /* Main.storyboard */; };
 		A9AFE6C026CE5B2100A5B9FF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A9AFE6BF26CE5B2100A5B9FF /* Assets.xcassets */; };
 		A9AFE6C326CE5B2100A5B9FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A9AFE6C126CE5B2100A5B9FF /* LaunchScreen.storyboard */; };
+		A9AFE6CD26CE5D4000A5B9FF /* a.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = A9AFE6CC26CE5D4000A5B9FF /* a.scnassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 		A9AFE6BF26CE5B2100A5B9FF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A9AFE6C226CE5B2100A5B9FF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A9AFE6C426CE5B2100A5B9FF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A9AFE6CC26CE5D4000A5B9FF /* a.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = a.scnassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +62,7 @@
 				A9AFE6B826CE5B1D00A5B9FF /* SceneDelegate.swift */,
 				A9AFE6BA26CE5B1D00A5B9FF /* ViewController.swift */,
 				A9AFE6BC26CE5B1D00A5B9FF /* Main.storyboard */,
+				A9AFE6CC26CE5D4000A5B9FF /* a.scnassets */,
 				A9AFE6BF26CE5B2100A5B9FF /* Assets.xcassets */,
 				A9AFE6C126CE5B2100A5B9FF /* LaunchScreen.storyboard */,
 				A9AFE6C426CE5B2100A5B9FF /* Info.plist */,
@@ -124,6 +127,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A9AFE6CD26CE5D4000A5B9FF /* a.scnassets in Resources */,
 				A9AFE6C326CE5B2100A5B9FF /* LaunchScreen.storyboard in Resources */,
 				A9AFE6C026CE5B2100A5B9FF /* Assets.xcassets in Resources */,
 				A9AFE6BE26CE5B1D00A5B9FF /* Main.storyboard in Resources */,
@@ -289,6 +293,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = W8LHF9DL7C;
 				INFOPLIST_FILE = threeDisplay/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -308,6 +313,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = W8LHF9DL7C;
 				INFOPLIST_FILE = threeDisplay/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
