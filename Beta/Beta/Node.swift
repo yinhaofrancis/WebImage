@@ -1,254 +1,130 @@
+////
+////  Node.swift
+////  Beta
+////
+////  Created by hao yin on 2021/8/19.
+////
 //
-//  Node.swift
-//  Beta
-//
-//  Created by hao yin on 2021/8/19.
-//
-
 import QuartzCore
 
-public enum Demainsion{
-    case pt(CGFloat)
-    case content
-    case parent
-    func isMatchContent()->Bool{
-        switch self {
-        case .pt(_):
-            return false
-        case .content:
-            return true
-        case .parent:
-            return false
-        }
-    }
-    func isMatchParent()->Bool{
-        switch self {
-        case .pt(_):
-            return false
-        case .content:
-            return false
-        case .parent:
-            return true
-        }
-    }
-    func ptValue()->CGFloat{
-        switch self {
-        case let .pt(v):
-            return v
-        case .content:
-            return 0
-        case .parent:
-            return 0
-        }
-    }
-}
-
 public struct Edge{
-    public let left:CGFloat
-    public let right:CGFloat
-    public let top:CGFloat
-    public let bottom:CGFloat
+    let left:CGFloat
+    let right:CGFloat
+    let top:CGFloat
+    let bottom:CGFloat
     
-    public static func all(value:CGFloat)->Edge{
-        Edge(left: value, right: value, top: value, bottom: value)
-    }
-    public static func hv(horizental:CGFloat,vertical:CGFloat)->Edge{
-        Edge(left: horizental, right: horizental, top: vertical, bottom: vertical)
-    }
-    public static func lrtb(left: CGFloat, right: CGFloat, top: CGFloat, bottom: CGFloat)->Edge{
-        Edge(left: left, right: right, top: top, bottom: bottom)
-    }
-    public static func value(left: CGFloat = 0, right: CGFloat = 0, top: CGFloat = 0, bottom: CGFloat = 0)->Edge{
-        Edge(left: left, right: right, top: top, bottom: bottom)
+    public init(left:CGFloat = 0,right:CGFloat = 0,top:CGFloat = 0,bottom:CGFloat = 0){
+        self.left = left
+        self.right = right
+        self.top = top
+        self.bottom = bottom
     }
 }
 
-public protocol Drawable{
-    var drawable:CALayer { get }
-}
-public protocol Node:Drawable,AnyObject {
-    var width:Demainsion { get }
-    var height:Demainsion { get }
-    var widthWeight:CGFloat { get }
-    var heightWeight:CGFloat { get }
-    var id:String? { get }
-    var padding:Edge { get }
-    var margin:Edge { get }
-    var frame:CGRect { get set }
-    func layout()
-    var parent:Node? { get set }
-    var nodes:[Node] { get }
-}
 
-extension Node{
-    public func set<V>(path:ReferenceWritableKeyPath<Self,V>,value:V)->Self{
-        self[keyPath: path] = value
-        return self
-    }
-}
-
-public protocol NodeGroup:Node{
-    init(nodes:[Node])
-    var width:Demainsion { get set }
-    var height:Demainsion { get set }
-}
-
-extension Node{
-    func matchParent(){
-        self.nodes.filter({$0.height.isMatchParent()}).forEach { n in
-            n.frame.size.height = self.frame.height
+extension CGRect{
+    public var left:CGFloat{
+        get{
+            return self.minX
         }
-        self.nodes.filter({$0.width.isMatchParent()}).forEach { n in
-            n.frame.size.width = self.frame.width
+        set{
+            self.origin.x = newValue
+            self.size.width = newValue - self.origin.x
         }
     }
+    
+    public var top:CGFloat{
+        get{
+            return self.minY
+        }
+        set{
+            self.origin.y = newValue
+            self.size.height = newValue - self.origin.y
+        }
+    }
+    public var bottom:CGFloat{
+        get{
+            return self.maxY
+        }
+        set{
+            self.size.height = newValue - self.minY
+        }
+    }
+    public var right:CGFloat{
+        get{
+            return self.maxX
+        }
+        set{
+            self.size.width = newValue - self.minX
+        }
+    }
+//    public mutating func edge(edge:Edge,container:CGRect){
+//        self.left = edge.left
+//        self.top = edge.top
+//        self.bottom = container.bottom - edge.bottom
+//        self.right = container.right - edge.right
+//    }
+
+    public var edge:Edge{
+        get{
+            Edge(left: self.left, right: self.right, top: self.top, bottom: self.bottom)
+        }
+        set{
+            self.left = newValue.left
+            self.right = newValue.right
+            self.top = newValue.top
+            self.bottom = newValue.bottom
+        }
+    }
+    public init(left:CGFloat,right:CGFloat,top:CGFloat,bottom:CGFloat){
+        self.init(x: left, y: top, width: right - left, height: bottom - top)
+    }
 }
 
-public enum Axis{
-    case vertical
-    case horizontal
+public class Node:Equatable{
+    public static func == (lhs: Node, rhs: Node) -> Bool {
+        Unmanaged.passUnretained(lhs).toOpaque() == Unmanaged.passUnretained(rhs).toOpaque()
+    }
+
+    public var frame:CGRect
+    public weak var parent:Node?
+    public init(frame:CGRect,parent:Node? = nil) {
+        self.frame = frame
+        self.parent = parent
+    }
+    public func layout(){
+        print(self.convertFrame)
+    }
+    public var contentSize:CGSize{
+        return self.frame.size
+    }
 }
-
-public class LinearLayout:NodeGroup{
-        
-    
-    public var drawable: CALayer = CALayer()
-
-    public weak var parent: Node?
-    
-    public var frame: CGRect = .zero
-    
-    public required init(nodes: [Node]) {
+extension Node{
+    public var convertFrame:CGRect{
+        var point:Node? = self.parent
+        var x:CGFloat = self.frame.origin.x
+        var y:CGFloat = self.frame.origin.y
+        while point != nil {
+            x += point!.frame.minX
+            y += point!.frame.minY
+            point = point!.parent
+        }
+        return CGRect(x: x, y: y, width: self.frame.width, height: self.frame.height)
+    }
+}
+public class NodeGroup:Node{
+    public let nodes:[Node]
+    public init(frame:CGRect,nodes:[Node]){
         self.nodes = nodes
-        
+        super.init(frame: frame)
         for i in nodes {
-            self.drawable.addSublayer(i.drawable)
             i.parent = self
         }
     }
-    
-    
-    public var nodes: [Node]
-    
-    public func layout() {
-        
-        self.matchParent()
-        
-        let sumw = self.nodes.reduce(0, {$0 + $1.widthWeight})
-        let sumh = self.nodes.reduce(0, {$0 + $1.heightWeight})
-        let delta:CGFloat = (self.direction == .vertical ? self.frame.height : self.frame.width) - self.nodes.reduce(0) { r, n in
-            switch self.direction{
-            case .vertical:
-                return r + n.height.ptValue()
-            case .horizontal:
-                return r + n.width.ptValue()
-            }
-        }
-        self.nodes.filter({$0.width.ptValue() > 0}).forEach { n in
-            n.frame.size.width = n.width.ptValue() + (sumw == 0 ? 0 : (self.direction == .horizontal ? delta * n.widthWeight / sumw : 0))
-        }
-        self.nodes.filter({$0.height.ptValue() > 0}).forEach { n in
-            n.frame.size.height = n.height.ptValue() + (sumh == 0 ? 0 : (self.direction == .vertical ? delta * n.heightWeight / sumh : 0))
-        }
-        
+    public override func layout() {
         
         for i in nodes {
             i.layout()
-        }
-        switch self.direction {
-            
-        case .vertical:
-            var startPoint = CGPoint.zero
-            for i in 0 ..< nodes.count {
-                self.nodes[i].frame.origin.x = startPoint.x
-                self.nodes[i].frame.origin.y = startPoint.y + self.nodes[i].margin.top + (i > 0 ? self.nodes[i - 1].margin.bottom : 0)
-                startPoint = CGPoint(x: startPoint.x, y: self.nodes[i].frame.maxY)
-            }
-            let h = (self.nodes.last?.frame.maxY ?? 0) + (self.nodes.last?.margin.bottom ?? 0)
-            if self.height.isMatchContent(){
-                self.frame.size.height = h
-            }
-            break
-            
-        case .horizontal:
-            var startPoint = CGPoint.zero
-            for i in 0 ..< nodes.count {
-                self.nodes[i].frame.origin.y = startPoint.y
-                self.nodes[i].frame.origin.x = startPoint.x + self.nodes[i].margin.left + (i > 0 ? self.nodes[i - 1].margin.right : 0)
-                startPoint = CGPoint(x:self.nodes[i].frame.maxX, y:startPoint.y)
-            }
-            let w = (self.nodes.last?.frame.maxX ?? 0) + (self.nodes.last?.margin.right ?? 0)
-            if self.width.isMatchContent(){
-                self.frame.size.height = w
-            }
-            break
-            
-        }
-    }
-    
-    public var direction:Axis = .vertical
-    
-    public var width: Demainsion = .parent
-    
-    public var height: Demainsion = .parent
-    
-    public var widthWeight: CGFloat = 0
-    
-    public var heightWeight: CGFloat = 0
-    
-    public var id: String?
-    
-    public var padding: Edge = .value()
-    
-    public var margin: Edge = .value()
-}
-public class Layer:CALayer,Node{
-    public var drawable: CALayer{
-        return self
-    }
-    public init(id:String) {
-        super.init()
-        self.id = id
-    }
-    required public init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    public var nodes: [Node] = []
-    
-    public var width: Demainsion = .parent
-    
-    public var height: Demainsion = .parent
-    
-    public var widthWeight: CGFloat = 0
-     
-    public var heightWeight: CGFloat = 0
-    
-    public var id: String?
-    
-    public var padding: Edge = .value()
-    
-    public var margin: Edge = .value()
-    
-    public func layout() {
-        
-    }
-    public var parent: Node?
-}
-
-
-
-public class Container:CALayer{
-    var drawLayer:CALayer?
-    public var group:NodeGroup?{
-        didSet{
-            drawLayer?.removeFromSuperlayer()
-            guard let no = self.group else { return }
-            self.addSublayer(no.drawable)
-            self.drawLayer = no.drawable
-            no.frame = self.bounds
-            no.width = .parent
-            no.height = .parent
-            no.layout()
         }
     }
 }

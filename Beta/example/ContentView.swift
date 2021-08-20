@@ -9,8 +9,8 @@ import UIKit
 import Beta
 
 class ContentView: UIView {
-    override class var layerClass: AnyClass{
-        return Container.self
-    }
+//    override class var layerClass: AnyClass{
+//        return Container.self
+//    }
 }
 

@@ -8,30 +8,26 @@
 import UIKit
 import Beta
 class ViewController: UIViewController {
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        let line = LinearLayout(nodes: [
-            Layer(id: "a")
-                .set(path: \Layer.backgroundColor, value: UIColor.red.cgColor)
-                .set(path: \Layer.width, value: .parent)
-                .set(path: \Layer.height, value: .pt(200)),
-            Layer(id: "b")
-                .set(path: \Layer.backgroundColor, value: UIColor.blue.cgColor)
-                .set(path: \Layer.width, value: .parent)
-                .set(path: \Layer.height, value: .pt(200)).set(path: \.heightWeight, value: 1),
-            Layer(id: "c")
-                .set(path: \Layer.backgroundColor, value: UIColor.green.cgColor)
-                .set(path: \Layer.width, value: .parent)
-                .set(path: \Layer.height, value: .pt(200))
-        ])
-        self.content.group = line
-        
-    }
 
-    var content:Container{
-        return self.view.layer as! Container
+        let a = NodeGroup(frame: UIScreen.main.bounds, nodes: [
+            Node(frame: CGRect(x: 0, y: 0, width: 100, height: 100)),
+            Node(frame: CGRect(x: 10, y: 10, width: 100, height: 100)),
+            Node(frame: CGRect(x: 20, y: 20, width: 100, height: 100)),
+            Node(frame: CGRect(x: 30, y: 30, width: 100, height: 100)),
+            Node(frame: CGRect(x: 30, y: 30, width: 100, height: 100)),
+            NodeGroup(frame: CGRect(x: 40, y: 40, width: 100, height: 100), nodes: [
+                Node(frame: CGRect(x: 8, y: 8, width: 100, height: 100)),
+                Node(frame: CGRect(x: 10, y: 10, width: 100, height: 100)),
+                Node(frame: CGRect(x: 20, y: 20, width: 100, height: 100)),
+                Node(frame: CGRect(x: 30, y: 30, width: 100, height: 100)),
+                Node(frame: CGRect(x: 30, y: 30, width: 100, height: 100))
+            ])
+            
+        ])
+        a.layout()
     }
 
 }
