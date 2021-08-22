@@ -267,12 +267,12 @@ public class LinearNodeGroup:NodeGroup{
             case .colume:
                 self.nodes[i].frame.origin.x = self.nodes[i].margin.left + start.x
                 self.nodes[i].frame.origin.y = self.nodes[i].margin.top + start.y + offset.y
-                start.x = self.nodes[i].frame.maxX
+                start.x = self.nodes[i].frame.maxX + self.nodes[i].margin.right
                 break
             case .row:
                 self.nodes[i].frame.origin.x = self.nodes[i].margin.left + start.x + offset.x
                 self.nodes[i].frame.origin.y = self.nodes[i].margin.top + start.y
-                start.y = self.nodes[i].frame.maxY
+                start.y = self.nodes[i].frame.maxY + self.nodes[i].margin.bottom
                 break
             }
             self.nodes[i].applyFrame()
