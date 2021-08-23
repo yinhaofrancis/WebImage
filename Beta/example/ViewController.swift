@@ -64,7 +64,7 @@ class ViewController: UIViewController {
                 .set(path: \.layer.borderWidth, value: 1)
                 .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
             k,
-        ])
+        ],isScroll: true)
         .set(path: \.direction, value: .row)
         .set(path: \.align, value: .end)
         

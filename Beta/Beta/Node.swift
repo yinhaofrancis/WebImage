@@ -193,9 +193,11 @@ public class NodeGroup:Node{
         super.init(width: width, height: height,layer: layer,view: view)
         for i in nodes {
             i.parent = self
-        }
-        for i in self.nodes{
-            self.layer.addSublayer(i.layer)
+            if let v = i.view{
+                self.view?.addSubview(v)
+            }else{
+                self.layer.addSublayer(i.layer)
+            }
         }
     }
     public override func layout() {
@@ -238,7 +240,9 @@ public class LinearNodeGroup:NodeGroup{
     public var scrollView:UIScrollView
     
     public override func layout() {
-    
+        if self.parent != nil{
+            super.layout()
+        }
         for i in nodes {
             i.layout()
         }
@@ -320,9 +324,10 @@ public class LinearNodeGroup:NodeGroup{
         }
         return (self.direction == .row ? self.frame.height : self.frame.width) - sumDefSize
     }
-    public init(width: Size, height: Size, nodes: [Node]) {
+    public init(width: Size, height: Size, nodes: [Node],isScroll:Bool = false) {
         let scrollView = UIScrollView()
         self.scrollView = scrollView
+        self.scrollView.isScrollEnabled = isScroll
         super.init(width: width, height: height, nodes: nodes,layer: scrollView.layer,view: scrollView)
     }
 }
