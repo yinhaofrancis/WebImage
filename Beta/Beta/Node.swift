@@ -13,6 +13,7 @@ import UIKit
 
 public protocol Drawable{
     var layer:CALayer { get }
+    var view:UIView? { get }
 }
 extension Drawable{
     public func set<V>(path:ReferenceWritableKeyPath<Self,V>,value:V)->Self{
@@ -129,8 +130,8 @@ extension CGRect{
 }
 
 public class Node:Equatable,Drawable{
-    public var layer: CALayer = CALayer()
-    
+    public var layer: CALayer
+    public var view: UIView?
     public static func == (lhs: Node, rhs: Node) -> Bool {
         Unmanaged.passUnretained(lhs).toOpaque() == Unmanaged.passUnretained(rhs).toOpaque()
     }
@@ -140,10 +141,12 @@ public class Node:Equatable,Drawable{
     public var height:Size
     public weak var parent:Node?
     public var margin:Edge = .init()
-    public init(width:Size,height:Size,parent:Node? = nil) {
+    public init(width:Size,height:Size,parent:Node? = nil,layer:CALayer = CALayer(),view:UIView? = nil) {
         self.width = width
         self.height = height
         self.parent = parent
+        self.layer = layer
+        self.view = view
         self.layer.contentsScale = Node.scale
     }
     public func layout(){
@@ -156,7 +159,11 @@ public class Node:Equatable,Drawable{
 }
 extension Node{
     func applyFrame(){
-        self.layer.frame  = self.frame
+        if let view = self.view{
+            view.frame = self.frame
+        }else{
+            self.layer.frame  = self.frame
+        }
     }
     func applyDefine(){
         guard let p = self.parent else { return  }
@@ -181,9 +188,9 @@ extension Node{
 }
 public class NodeGroup:Node{
     public let nodes:[Node]
-    public init(width: Size, height: Size,nodes:[Node]){
+    public init(width: Size, height: Size,nodes:[Node],layer:CALayer = CALayer(),view:UIView? = nil){
         self.nodes = nodes
-        super.init(width: width, height: height)
+        super.init(width: width, height: height,layer: layer,view: view)
         for i in nodes {
             i.parent = self
         }
@@ -227,6 +234,8 @@ public class LinearNodeGroup:NodeGroup{
     public var direction:LinearNodeGroupDirection = .colume
     
     public var align:LinearNodeAlign = .start
+    
+    public var scrollView:UIScrollView
     
     public override func layout() {
     
@@ -279,6 +288,7 @@ public class LinearNodeGroup:NodeGroup{
         }
         
         self.applyFrame()
+        self.scrollView.contentSize = self.contentSize
     }
     public override var contentSize:CGSize{
         
@@ -309,6 +319,11 @@ public class LinearNodeGroup:NodeGroup{
             r + (self.direction == .row ? n.margin.bottom + n.margin.top + n.height.size : n.margin.left + n.margin.right + n.width.size)
         }
         return (self.direction == .row ? self.frame.height : self.frame.width) - sumDefSize
+    }
+    public init(width: Size, height: Size, nodes: [Node]) {
+        let scrollView = UIScrollView()
+        self.scrollView = scrollView
+        super.init(width: width, height: height, nodes: nodes,layer: scrollView.layer,view: scrollView)
     }
 }
 public class ImageNode:Node{
@@ -342,6 +357,31 @@ public class NodeGroupLayer:CALayer{
             
             if let node = self.nodeGroup {
                 self.addSublayer(node.layer)
+                
+                node.frame = self.bounds
+                node.layout()
+            }
+            
+        }
+    }
+}
+public class NodeGroupView:UIView{
+    public var nodeGroup:NodeGroup?{
+        didSet{
+            
+            if let ov = oldValue,ov.layer.superlayer == self{
+                ov.layer.removeFromSuperlayer()
+                ov.view?.removeFromSuperview()
+            }
+            
+            if let node = self.nodeGroup {
+                
+                if let view = node.view{
+                    self.addSubview(view)
+                }else{
+                    self.layer.addSublayer(node.layer)
+                }
+                
                 
                 node.frame = self.bounds
                 node.layout()

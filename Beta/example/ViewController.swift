@@ -18,12 +18,46 @@ class ViewController: UIViewController {
         k.layer.masksToBounds = true
         k.layer.cornerRadius = 8
         k.margin = .init(left: 0, right: 0, top: 0, bottom: 0)
-        self.content.group = LinearNodeGroup(width: 500, height: 500, nodes: [
+        self.content.nodeGroup = LinearNodeGroup(width: 500, height: 500, nodes: [
             Node(width: .matchParent, height: 128)
                 .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
                 .set(path: \.layer.masksToBounds, value: true)
                 .set(path: \.layer.borderWidth, value: 1)
                 .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+            Node(width: .matchParent, height: 128)
+                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                .set(path: \.layer.masksToBounds, value: true)
+                .set(path: \.layer.borderWidth, value: 1)
+                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+            Node(width: .matchParent, height: 128)
+                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                .set(path: \.layer.masksToBounds, value: true)
+                .set(path: \.layer.borderWidth, value: 1)
+                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+            Node(width: .matchParent, height: 128)
+                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                .set(path: \.layer.masksToBounds, value: true)
+                .set(path: \.layer.borderWidth, value: 1)
+                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+            Node(width: .matchParent, height: 128)
+                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                .set(path: \.layer.masksToBounds, value: true)
+                .set(path: \.layer.borderWidth, value: 1)
+                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+            Node(width: .matchParent, height: 128)
+                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                .set(path: \.layer.masksToBounds, value: true)
+                .set(path: \.layer.borderWidth, value: 1)
+                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+            Node(width: .matchParent, height: 128)
+                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                .set(path: \.layer.masksToBounds, value: true)
+                .set(path: \.layer.borderWidth, value: 1)
+                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),Node(width: .matchParent, height: 128)
+                    .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                    .set(path: \.layer.masksToBounds, value: true)
+                    .set(path: \.layer.borderWidth, value: 1)
+                    .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
             Node(width: .matchParent, height: 128)
                 .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
                 .set(path: \.layer.masksToBounds, value: true)
@@ -36,8 +70,8 @@ class ViewController: UIViewController {
         
     }
     
-    var content:ContentView {
-        return self.view as! ContentView
+    var content:NodeGroupView {
+        return self.view as! NodeGroupView
     }
 
 }
