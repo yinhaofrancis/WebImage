@@ -188,9 +188,9 @@ extension Node{
 }
 public class NodeGroup:Node{
     public let nodes:[Node]
-    public init(width: Size, height: Size,nodes:[Node],layer:CALayer = CALayer(),view:UIView? = nil){
+    public init(width: Size, height: Size,nodes:[Node],layer:CALayer = CALayer(),view:UIView? = UIView()){
         self.nodes = nodes
-        super.init(width: width, height: height,layer: layer,view: view)
+        super.init(width: width, height: height,layer: view?.layer ?? layer,view: view)
         for i in nodes {
             i.parent = self
             if let v = i.view{
@@ -199,6 +199,9 @@ public class NodeGroup:Node{
                 self.layer.addSublayer(i.layer)
             }
         }
+    }
+    public static func layer(width: Size, height: Size,nodes:[Node])->NodeGroup{
+        return NodeGroup(width: width, height: height, nodes: nodes, layer: CALayer(), view: nil)
     }
     public override func layout() {
         super.layout()
@@ -211,6 +214,7 @@ public class NodeGroup:Node{
         if self.height == .matchContent{
             self.frame.size.height = self.contentSize.height
         }
+        self.applyFrame()
     }
     public override var contentSize: CGSize{
         let w = self.nodes.reduce(0.0) { r, n in

@@ -18,55 +18,58 @@ class ViewController: UIViewController {
         k.layer.masksToBounds = true
         k.layer.cornerRadius = 8
         k.margin = .init(left: 0, right: 0, top: 0, bottom: 0)
-        self.content.nodeGroup = LinearNodeGroup(width: 500, height: 500, nodes: [
-            Node(width: .matchParent, height: 128)
-                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
-                .set(path: \.layer.masksToBounds, value: true)
-                .set(path: \.layer.borderWidth, value: 1)
-                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
-            Node(width: .matchParent, height: 128)
-                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
-                .set(path: \.layer.masksToBounds, value: true)
-                .set(path: \.layer.borderWidth, value: 1)
-                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
-            Node(width: .matchParent, height: 128)
-                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
-                .set(path: \.layer.masksToBounds, value: true)
-                .set(path: \.layer.borderWidth, value: 1)
-                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
-            Node(width: .matchParent, height: 128)
-                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
-                .set(path: \.layer.masksToBounds, value: true)
-                .set(path: \.layer.borderWidth, value: 1)
-                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
-            Node(width: .matchParent, height: 128)
-                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
-                .set(path: \.layer.masksToBounds, value: true)
-                .set(path: \.layer.borderWidth, value: 1)
-                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
-            Node(width: .matchParent, height: 128)
-                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
-                .set(path: \.layer.masksToBounds, value: true)
-                .set(path: \.layer.borderWidth, value: 1)
-                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
-            Node(width: .matchParent, height: 128)
-                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
-                .set(path: \.layer.masksToBounds, value: true)
-                .set(path: \.layer.borderWidth, value: 1)
-                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),Node(width: .matchParent, height: 128)
+        self.content.nodeGroup = NodeGroup(width: .matchParent, height: .matchParent, nodes: [
+            Node(width: .matchParent, height: .matchParent).set(path: \Node.layer.backgroundColor, value: UIColor.gray.cgColor),
+            LinearNodeGroup(width: .matchParent, height: .matchParent, nodes: [
+                Node(width: .matchParent, height: 128)
                     .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
                     .set(path: \.layer.masksToBounds, value: true)
                     .set(path: \.layer.borderWidth, value: 1)
                     .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
-            Node(width: .matchParent, height: 128)
-                .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
-                .set(path: \.layer.masksToBounds, value: true)
-                .set(path: \.layer.borderWidth, value: 1)
-                .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
-            k,
-        ],isScroll: true)
-        .set(path: \.direction, value: .row)
-        .set(path: \.align, value: .end)
+                Node(width: .matchParent, height: 128)
+                    .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                    .set(path: \.layer.masksToBounds, value: true)
+                    .set(path: \.layer.borderWidth, value: 1)
+                    .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+                Node(width: .matchParent, height: 128)
+                    .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                    .set(path: \.layer.masksToBounds, value: true)
+                    .set(path: \.layer.borderWidth, value: 1)
+                    .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+                Node(width: .matchParent, height: 128)
+                    .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                    .set(path: \.layer.masksToBounds, value: true)
+                    .set(path: \.layer.borderWidth, value: 1)
+                    .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+                Node(width: .matchParent, height: 128)
+                    .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                    .set(path: \.layer.masksToBounds, value: true)
+                    .set(path: \.layer.borderWidth, value: 1)
+                    .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+                Node(width: .matchParent, height: 128)
+                    .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                    .set(path: \.layer.masksToBounds, value: true)
+                    .set(path: \.layer.borderWidth, value: 1)
+                    .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+                Node(width: .matchParent, height: 128)
+                    .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                    .set(path: \.layer.masksToBounds, value: true)
+                    .set(path: \.layer.borderWidth, value: 1)
+                    .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),Node(width: .matchParent, height: 128)
+                        .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                        .set(path: \.layer.masksToBounds, value: true)
+                        .set(path: \.layer.borderWidth, value: 1)
+                        .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+                Node(width: .matchParent, height: 128)
+                    .set(path: \.layer.backgroundColor, value: UIColor.orange.cgColor)
+                    .set(path: \.layer.masksToBounds, value: true)
+                    .set(path: \.layer.borderWidth, value: 1)
+                    .set(path: \.layer.borderColor, value: UIColor.green.cgColor).set(path: \.margin, value: .init(left: 10, right: 10, top: 10, bottom: 10)),
+                k,
+            ],isScroll: true)
+            .set(path: \.direction, value: .row)
+            .set(path: \.align, value: .center)
+        ])
         
     }
     
