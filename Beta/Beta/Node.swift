@@ -14,6 +14,7 @@ import UIKit
 public protocol Drawable{
     var layer:CALayer { get }
     var view:UIView? { get }
+    func draw(ctx:CGContext)
 }
 extension Drawable{
     public func set<V>(path:ReferenceWritableKeyPath<Self,V>,value:V)->Self{
@@ -48,6 +49,9 @@ public struct Size:ExpressibleByFloatLiteral,ExpressibleByIntegerLiteral,Equatab
     }
     public func constaint(size:CGFloat,delta:CGFloat = 0,weightSum:CGFloat = 1)->CGFloat{
         let value = size + delta * weight / weightSum
+        if(self.max == 0 && self.min == 0){
+            return value
+        }
         if self.max < value{
             return self.max
         }else if self.min > value{
@@ -130,6 +134,11 @@ extension CGRect{
 }
 
 public class Node:Equatable,Drawable{
+
+    public func draw(ctx: CGContext) {
+        
+    }
+    static let queue:DispatchQueue = DispatchQueue(label: "render")
     public var layer: CALayer
     public var view: UIView?
     public static func == (lhs: Node, rhs: Node) -> Bool {
@@ -141,6 +150,13 @@ public class Node:Equatable,Drawable{
     public var height:Size
     public weak var parent:Node?
     public var margin:Edge = .init()
+    public var name:String?
+    public var hidden:Bool = false{
+        didSet{
+            self.view?.isHidden = self.hidden
+            self.layer.isHidden = self.hidden
+        }
+    }
     public init(width:Size,height:Size,parent:Node? = nil,layer:CALayer = CALayer(),view:UIView? = nil) {
         self.width = width
         self.height = height
@@ -156,13 +172,46 @@ public class Node:Equatable,Drawable{
     public var contentSize:CGSize{
         return self.frame.size
     }
-}
-extension Node{
-    func applyFrame(){
+    public func findNode(name:String)->Node?{
+        if self.name == name{
+            return self
+        }else{
+            return nil
+        }
+    }
+    public func applyView(){
         if let view = self.view{
             view.frame = self.frame
         }else{
+            
             self.layer.frame  = self.frame
+        }
+    }
+    public func drawView(){
+        Node.queue.async {
+            UIGraphicsBeginImageContextWithOptions(self.frame.size, false, UIScreen.main.scale)
+            
+            defer{
+                UIGraphicsEndImageContext()
+            }
+            guard let ctx = UIGraphicsGetCurrentContext() else {return}
+            UIGraphicsPushContext(ctx)
+            self.draw(ctx: ctx)
+            let img = ctx.makeImage()
+            DispatchQueue.main.async {
+                self.layer.contents = img
+            }
+            UIGraphicsPopContext()
+            
+        }
+        
+        
+    }
+}
+extension Node{
+    func applyFrame(){
+        DispatchQueue.main.async {
+            self.applyView()
         }
     }
     func applyDefine(){
@@ -185,11 +234,19 @@ extension Node{
     public static var scale:CGFloat{
         return UIScreen.main.scale
     }
+    
 }
 public class NodeGroup:Node{
-    public let nodes:[Node]
+    private var _nodes:[Node]
+    public var nodes:[Node]{
+        self._nodes.filter({!$0.hidden})
+    }
+    public let keyNode:[String:Node]
     public init(width: Size, height: Size,nodes:[Node],layer:CALayer = CALayer(),view:UIView? = UIView()){
-        self.nodes = nodes
+        self._nodes = nodes
+        keyNode = nodes.filter({$0.name != nil}).reduce(into: [:], { r, n in
+            r[n.name!] = n
+        })
         super.init(width: width, height: height,layer: view?.layer ?? layer,view: view)
         for i in nodes {
             i.parent = self
@@ -224,6 +281,20 @@ public class NodeGroup:Node{
             max(r,(n.margin.top + n.margin.bottom + n.frame.height))
         }
         return CGSize(width: w, height: h)
+    }
+    public override func findNode(name: String) -> Node? {
+        if let n = super.findNode(name: name){
+            return n
+        }
+        if let n = self.keyNode[name]{
+            return n
+        }
+        for i in self.nodes {
+            if let n = i.findNode(name: name){
+                return n
+            }
+        }
+        return nil
     }
 }
 public class LinearNodeGroup:NodeGroup{
@@ -261,7 +332,7 @@ public class LinearNodeGroup:NodeGroup{
                     i.frame.size.height += (i.height.weight / self.weightSum) * deltaS
                     break
                 }
-                i.applyFrame()
+//                i.applyFrame()
             }
         }
         var start = CGPoint.zero
@@ -296,6 +367,9 @@ public class LinearNodeGroup:NodeGroup{
         }
         
         self.applyFrame()
+    }
+    public override func applyView() {
+        super.applyView()
         self.scrollView.contentSize = self.contentSize
     }
     public override var contentSize:CGSize{
@@ -339,21 +413,95 @@ public class ImageNode:Node{
     public var image: CGImage?
     public init(image:CGImage?){
         self.image = image
-        super.init(width: .init(value: CGFloat(image?.width ?? 0) / Node.scale), height: .init(value: CGFloat(image?.height ?? 0) / Node.scale))
+        super.init(width: .matchContent, height: .matchContent)
     }
     public override func layout() {
         guard let img = self.image else {
-            
             return
         }
-        if self.width.value == 0{
-            self.width = .init(value: CGFloat(img.height) / Node.scale,max:self.width.max,min:self.width.min)
+        if self.width == .matchContent{
+            self.width = .init(value: CGFloat(img.width) / Node.scale,max:self.width.max,min:self.width.min)
         }
-        if self.width.value == 0{
+        if self.height == .matchContent{
             self.height = .init(value: CGFloat(img.height) / Node.scale,max:self.height.max,min:self.height.min)
         }
         self.layer.contents = self.image
         super.layout()
+    }
+}
+public class ButtonNode:Node{
+    public var text:NSAttributedString?{
+        didSet{
+            self.button .setAttributedTitle(self.text, for: .normal)
+        }
+    }
+    var action:NodeActionBlock
+    var button:UIButton
+    public init(text:NSAttributedString,callback: @escaping ()->Void){
+        self.text = text
+        self.action = NodeActionBlock(call: callback)
+        let b =  UIButton()
+        self.button = b
+        super.init(width: .matchContent, height: .matchContent ,parent: nil,layer:b.layer  ,view: b)
+        self.button .addTarget(self.action, action: #selector(NodeActionBlock.callFunc), for: .touchUpInside)
+        self.button .setAttributedTitle(self.text, for: .normal)
+    }
+    public override func layout() {
+        guard let p = self.parent else { return  }
+        
+        
+        if self.width == .matchContent && self.height == .matchContent{
+            let rect = text?.size(constraint: CGSize(width: p.frame.width - self.margin.left - self.margin.right, height: .infinity)) ?? .zero
+            self.frame.size.width = rect.width
+            self.frame.size.height = rect.height
+        }else if self.width == .matchContent{
+            let rect = text?.size(constraint: CGSize(width: p.frame.width - self.margin.left - self.margin.right, height: self.height.size)) ?? .zero
+            self.frame.size.width = rect.width
+            self.frame.size.height = self.height == Size.matchParent ? p.frame.height - self.margin.bottom - self.margin.top : self.height.size
+        }else if self.height == .matchContent{
+            let rect = text?.size(constraint: CGSize(width:self.width.size , height: .infinity)) ?? .zero
+            self.frame.size.height = rect.height
+            self.frame.size.width =  self.width == Size.matchParent ? p.frame.width - self.margin.left - self.margin.right : self.width.size
+        }
+        self.applyFrame()
+    }
+}
+public class TextNode:Node{
+    public var text:NSAttributedString?
+//    public var textLayer:CATextLayer = CATextLayer()
+    
+    public init(text:NSAttributedString){
+        self.text = text
+        super.init(width: .matchContent, height: .matchContent,parent: nil,layer: CALayer(),view: nil)
+//        self.textLayer.string = text
+//        textLayer.isWrapped = true
+    }
+    public override func layout() {
+        guard let p = self.parent else { return  }
+        
+        
+        if self.width == .matchContent && self.height == .matchContent{
+            let rect = text?.size(constraint: CGSize(width: p.frame.width - self.margin.left - self.margin.right, height: .infinity)) ?? .zero
+            self.frame.size.width = rect.width
+            self.frame.size.height = rect.height
+        }else if self.width == .matchContent{
+            let rect = text?.size(constraint: CGSize(width: p.frame.width - self.margin.left - self.margin.right, height: self.height.size)) ?? .zero
+            self.frame.size.width = rect.width
+            self.frame.size.height = self.height == Size.matchParent ? p.frame.height - self.margin.bottom - self.margin.top : self.height.size
+        }else if self.height == .matchContent{
+            let rect = text?.size(constraint: CGSize(width:self.width.size , height: .infinity)) ?? .zero
+            self.frame.size.height = rect.height
+            self.frame.size.width =  self.width == Size.matchParent ? p.frame.width - self.margin.left - self.margin.right : self.width.size
+        }
+        self.applyFrame()
+    }
+    public override func draw(ctx: CGContext) {
+        
+        self.text?.draw(in: self.layer.bounds)
+    }
+    public override func applyView() {
+        super.applyView()
+        self.drawView()
     }
 }
 public class NodeGroupLayer:CALayer{
@@ -375,6 +523,7 @@ public class NodeGroupLayer:CALayer{
     }
 }
 public class NodeGroupView:UIView{
+    let queue = DispatchQueue(label: "layout")
     public var nodeGroup:NodeGroup?{
         didSet{
             
@@ -393,9 +542,47 @@ public class NodeGroupView:UIView{
                 
                 
                 node.frame = self.bounds
-                node.layout()
+                self.queue.async {
+                    node.layout()
+                }
             }
             
         }
+    }
+}
+public class NodeActionBlock:NSObject{
+    private var call:()->Void
+    
+    public init(call:@escaping ()->Void){
+        self.call = call
+    }
+    @objc public func callFunc(){
+        self.call()
+    }
+    
+}
+
+@resultBuilder
+public struct BuildAttributeString{
+    public static func buildBlock(_ components: NSAttributedString...) -> NSAttributedString {
+        components.reduce(into: NSMutableAttributedString()) { r, s in
+            r.append(s)
+        }
+    }
+    public static func buildBlock(_ paragraphStyle:NSParagraphStyle, _ components: NSAttributedString...) -> NSAttributedString {
+        let c = components.reduce(into: NSMutableAttributedString()) { r, s in
+            r.append(s)
+        }
+        c.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: c.length))
+        return c
+    }
+}
+extension NSAttributedString{
+    public static func create(@BuildAttributeString call:()->NSAttributedString)->NSAttributedString{
+        return call()
+    }
+    public func size(constraint:CGSize) ->CGSize{
+        let setter = CTFramesetterCreateWithAttributedString(self as CFAttributedString)
+        return CTFramesetterSuggestFrameSizeWithConstraints(setter, CFRangeMake(0, self.length), nil, constraint, nil)
     }
 }
