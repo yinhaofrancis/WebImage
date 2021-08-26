@@ -202,10 +202,7 @@ public class Node:Equatable,Drawable{
                 self.layer.contents = img
             }
             UIGraphicsPopContext()
-            
         }
-        
-        
     }
 }
 extension Node{
@@ -242,13 +239,13 @@ public class NodeGroup:Node{
         self._nodes.filter({!$0.hidden})
     }
     public let keyNode:[String:Node]
-    public init(width: Size, height: Size,nodes:[Node],layer:CALayer = CALayer(),view:UIView? = UIView()){
-        self._nodes = nodes
-        keyNode = nodes.filter({$0.name != nil}).reduce(into: [:], { r, n in
+    public init(width: Size, height: Size,@BuildNodeGroup buildNodes:()->[Node],layer:CALayer = CALayer(),view:UIView? = UIView()){
+        self._nodes = buildNodes()
+        keyNode = self._nodes.filter({$0.name != nil}).reduce(into: [:], { r, n in
             r[n.name!] = n
         })
         super.init(width: width, height: height,layer: view?.layer ?? layer,view: view)
-        for i in nodes {
+        for i in self._nodes {
             i.parent = self
             if let v = i.view{
                 self.view?.addSubview(v)
@@ -257,8 +254,8 @@ public class NodeGroup:Node{
             }
         }
     }
-    public static func layer(width: Size, height: Size,nodes:[Node])->NodeGroup{
-        return NodeGroup(width: width, height: height, nodes: nodes, layer: CALayer(), view: nil)
+    public static func layer(width: Size, height: Size,@BuildNodeGroup buildNodes:()->[Node])->NodeGroup{
+        return NodeGroup(width: width, height: height, buildNodes: buildNodes, layer: CALayer(), view: nil)
     }
     public override func layout() {
         super.layout()
@@ -295,6 +292,36 @@ public class NodeGroup:Node{
             }
         }
         return nil
+    }
+}
+public class ConstraintNodeGroup:NodeGroup{
+    
+    public var scrollView:UIScrollView
+    
+    public init(width: Size, height: Size, @BuildNodeGroup nodes:()->[Node],isScroll:Bool = false) {
+        let scrollView = UIScrollView()
+        self.scrollView = scrollView
+        self.scrollView.isScrollEnabled = isScroll
+        super.init(width: width, height: height, buildNodes: nodes,layer: scrollView.layer,view: scrollView)
+    }
+    
+}
+
+public struct Constaint{
+  
+    var from:String
+    var fromArchor:Archor
+    var constaint:CGFloat
+    var to:String?
+    var toArchor:Archor
+    
+    public enum Archor{
+        case left
+        case right
+        case width
+        case height
+        case bottom
+        case top
     }
 }
 public class LinearNodeGroup:NodeGroup{
@@ -402,11 +429,11 @@ public class LinearNodeGroup:NodeGroup{
         }
         return (self.direction == .row ? self.frame.height : self.frame.width) - sumDefSize
     }
-    public init(width: Size, height: Size, nodes: [Node],isScroll:Bool = false) {
+    public init(width: Size, height: Size, @BuildNodeGroup nodes:()->[Node],isScroll:Bool = false) {
         let scrollView = UIScrollView()
         self.scrollView = scrollView
         self.scrollView.isScrollEnabled = isScroll
-        super.init(width: width, height: height, nodes: nodes,layer: scrollView.layer,view: scrollView)
+        super.init(width: width, height: height, buildNodes: nodes,layer: scrollView.layer,view: scrollView)
     }
 }
 public class ImageNode:Node{
@@ -468,13 +495,9 @@ public class ButtonNode:Node{
 }
 public class TextNode:Node{
     public var text:NSAttributedString?
-//    public var textLayer:CATextLayer = CATextLayer()
-    
     public init(text:NSAttributedString){
         self.text = text
         super.init(width: .matchContent, height: .matchContent,parent: nil,layer: CALayer(),view: nil)
-//        self.textLayer.string = text
-//        textLayer.isWrapped = true
     }
     public override func layout() {
         guard let p = self.parent else { return  }
@@ -504,6 +527,7 @@ public class TextNode:Node{
         self.drawView()
     }
 }
+
 public class NodeGroupLayer:CALayer{
     public var nodeGroup:NodeGroup?{
         didSet{
@@ -585,4 +609,20 @@ extension NSAttributedString{
         let setter = CTFramesetterCreateWithAttributedString(self as CFAttributedString)
         return CTFramesetterSuggestFrameSizeWithConstraints(setter, CFRangeMake(0, self.length), nil, constraint, nil)
     }
+}
+
+@resultBuilder
+public struct BuildNodeGroup{
+    public static func buildBlock(_ components: Node...) -> [Node] {
+        return components
+    }
+    
+}
+
+@resultBuilder
+public struct BuildConstaint{
+    public static func buildBlock(_ components: Node...) -> [Node] {
+        return components
+    }
+    
 }
