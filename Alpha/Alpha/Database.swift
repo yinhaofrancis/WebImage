@@ -24,6 +24,14 @@ public struct WalMode:RawRepresentable{
     public static var truncate  = WalMode(rawValue: SQLITE_CHECKPOINT_TRUNCATE)!
     
 }
+public struct ForeignKeyAction:Hashable{
+    let action:String
+    static public var CASCADE:ForeignKeyAction = ForeignKeyAction(action: "CASCADE")
+    static public var NO_ACTION:ForeignKeyAction = ForeignKeyAction(action: "NO ACTION")
+    static public var RESTRICT:ForeignKeyAction = ForeignKeyAction(action: "RESTRICT")
+    static public var SET_NULL:ForeignKeyAction = ForeignKeyAction(action: "SET NULL")
+    static public var SET_DEFAULT:ForeignKeyAction = ForeignKeyAction(action: "SET DEFAULT")
+}
 
 public enum JournalMode:String{
     case DELETE
@@ -332,6 +340,18 @@ extension Database{
             call.call(call,i,ret?.pointee)
         }, nil, nil)
     }
+    public func checkpoint(type:WalMode,log:Int32,total:Int32) throws {
+        let l = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
+        let t = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
+        l.pointee = log
+        t.pointee = total
+        let code = sqlite3_wal_checkpoint_v2(self.sqlite, nil, type.rawValue, l, t)
+        l.deallocate()
+        t.deallocate()
+        if SQLITE_OK != code{
+            throw NSError(domain: Self.errormsg(pointer: self.sqlite), code: Int(code), userInfo: nil)
+        }
+    }
     public func rollback() throws{
         try self.exec(sql: "ROLLBACK;")
     }
@@ -341,17 +361,58 @@ extension Database{
     public func begin() throws {
         try self.exec(sql: "BEGIN;")
     }
-    
-    public func close(){
-        sqlite3_close(self.sqlite)
-    }
-    public func fetch<T:SQLCode>(request:FetchRequest<T>) throws->ResultSet{
-        let rs = try self.query(sql: request.sql)
-        request.doSelectBind(result: rs)
-        return rs
-    }
     public static func errormsg(pointer:OpaquePointer?)->String{
         String(cString: sqlite3_errmsg(pointer))
+    }
+    public func autoCheckpoint(frame:Int32 = 100) throws{
+        let code = sqlite3_wal_autocheckpoint(self.sqlite, frame)
+        if SQLITE_OK != code{
+            throw NSError(domain: Self.errormsg(pointer: self.sqlite), code: Int(code), userInfo: nil)
+        }
+    }
+    public func setJournalMode(_ model:JournalMode) throws {
+        try self.exec(sql: "PRAGMA journal_mode = \(model)")
+    }
+    private func hook(){
+        sqlite3_wal_hook(self.sqlite, { s, sql, c, co in
+            guard let str = c else { return 0 }
+            print("-------------")
+            print("DO WAL :" + String(cString: str))
+            print("-------------")
+            return 0
+        }, Unmanaged.passUnretained(self).toOpaque())
+        
+        sqlite3_commit_hook(self.sqlite, { s in
+            print("-------------")
+            print("DO COMMIT :")
+            print("-------------")
+            return 0
+        }, Unmanaged.passUnretained(self).toOpaque())
+        
+        sqlite3_rollback_hook(self.sqlite, { s in
+            print("-------------")
+            print("DO ROLLBACK")
+            print("-------------")
+        }, Unmanaged.passUnretained(self).toOpaque())
+    }
+    public func synchronous(mode:synchronousMode) throws {
+        try self.exec(sql: "PRAGMA synchronous = " + mode.rawValue)
+    }
+    public func setVersion(version:Int) throws {
+        try self.exec(sql: "PRAGMA user_version=\(version)")
+    }
+    public var version:Int{
+        do{
+            let rs = try self.query(sql: "PRAGMA user_version")
+            defer {
+                rs.close()
+            }
+            try rs.step()
+            let v =  rs.column(index: 0, type: Int.self).value()
+            return v
+        }catch{
+            return 0
+        }
     }
     public func dataMaster(type:String,name:String? = nil) throws->[DataMasterInfo]{
         let re = try self.query(sql: "select * from sqlite_master where type=? \(name != nil ? "and name=?" : "") ")
@@ -436,212 +497,7 @@ extension Database{
             try? self.exec(sql: "PRAGMA foreign_keys = \(newValue ? "ON" : "OFF")")
         }
     }
-    public func create<T:SQLCode>(obj:T) throws{
-        if try self.tableExists(name: T.tableName){
-            let column = try self.tableInfo(name: T.tableName)
-            let nowColumn = T().fullKey
-            let addC = nowColumn.filter { i in
-                !column.contains { j in
-                    (i.1.keyName != nil && j.key == i.1.keyName!) || i.0 == j.key
-                }
-            }
-            for i in addC {
-                guard let t = i.1.value else { throw NSError(domain: "alter table value is not use", code: 0, userInfo: nil) } 
-                try self.addColumn(name: T.tableName, columeName: i.1.keyName ?? i.0, ov:t , notnull: i.1.nullable, defaultValue: i.1.defaultValue ?? "null")
-            }
-            let removeC = column.filter { j in
-                !nowColumn.contains(where: { i in
-                    (i.1.keyName != nil && j.key == i.1.keyName!) || i.0 == j.key
-                })
-            }
-            if removeC.count > 0{
-                self.foreignKey = false
-                try self.alterTableName(name: T.tableName, newName: "\(T.tableName)_temp");
-                try self.exec(sql: obj.create)
-                let key = obj.fullKey.map({$0.1.keyName ?? $0.0}).joined(separator: ",")
-                let copySql = "INSERT INTO \(T.tableName)  SELECT \(key) FROM \("\(T.tableName)_temp")"
-                try self.exec(sql: copySql)
-                try self.exec(sql: "drop table \(T.tableName)_temp")
-                self.foreignKey = true
-                print(try self.integrityCheck(table: T.tableName))
-                
-            }
-        
-        }else{
-            try self.exec(sql: obj.create)
-        }
-    }
-    public func addColumn<T:OriginValue>(name:String,columeName:String,type:T.Type,notnull :Bool = false ,defaultValue:String = "") throws {
-        let typedef = notnull ? T.sqlType : T.nullType
-        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default `\(defaultValue)`" : "" )"
-        try self.exec(sql: sql)
-    }
-    public func addColumn(name:String,columeName:String, ov:OriginValue ,notnull:Bool = false ,defaultValue:String = "") throws {
-        let typedef = notnull ? ov.sqlType : ov.nullType
-        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default `\(defaultValue)`" : "" )"
-        try self.exec(sql: sql)
-    }
-    public func alterTableName(name:String,newName:String) throws {
-        let sql = "ALTER TABLE \(name) RENAME TO \(newName)"
-        try self.exec(sql: sql)
-    }
-    public func renameColumn(name:String,columeName:String,newName:String) throws {
-        try self.exec(sql: "ALTER TABLE \(name) RENAME COLUMN \(columeName) TO \(newName)")
-    }
-    public func exists<T:SQLCode>(model:T) throws ->Bool{
-        let req = FetchRequest(obj: model,key:.count("*"))
-        req.loadKeyMap(map: model.primaryConditionBindMap)
-        let r = try self.query(sql: req.sql)
-        req.doSelectBind(result: r)
-        try r.step()
-        let c = r.column(index: 0, type: Int32.self).value() > 0
-        r.close()
-        return c
-    }
-    public func save<T:SQLCode>(model:T) throws{
-        if try self.exists(model: model){
-            try self.update(model: model)
-        }else{
-            try self.insert(model: model)
-        }
-    }
-    public func count<T:SQLCode>(model:T.Type) throws ->Int{
-        let req = FetchRequest(table: model, key: .count("*"))
-        let r = try self.query(sql: req.sql)
-        try r.step()
-        let c = r.column(index: 0, type: Int.self).value()
-        r.close()
-        return c
-    }
-    public func update<T:SQLCode>(model:T) throws {
-        try model.doUpdate(db: self)
-    }
-    public func update<T:SQLCode>(model:[String:OriginValue?],table:T.Type,condition:Condition,bind:[String:OriginValue] = [:]) throws {
-        let kv = model.map { i in
-            T.updateSetKeyCode((i.key,i.key,i.value))
-        }.compactMap({$0}).joined(separator: ",")
-        let c = "UPDATE \(T.tableName) SET \(kv) where \(condition.conditionCode)"
-        let rs = try self.query(sql: c)
-        for i in model{
-            
-            if i.value is Data{
-                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
-            }else if i.value is String{
-                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
-            }
-        }
-        for i in bind{
-            if i.value is Data{
-                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
-            }else if i.value is String{
-                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
-            }
-        }
-        try rs.step()
-        rs.close()
-    }
-    public func delete<T:SQLCode>(table:T.Type,condition:Condition,bind:[String:OriginValue]) throws {
-        let c = "DELETE FROM \(T.tableName) where \(condition.conditionCode)"
-        let rs = try self.query(sql: c)
-        for i in bind{
-            if i.value is Data{
-                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
-            }else if i.value is String{
-                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
-            }
-        }
-        try rs.step()
-        rs.close()
-    }
-    public func select<T:SQLCode>(request:FetchRequest<T>) throws ->[T]{
-        let s = try self.fetch(request: request)
-        let re = try FetchRequest<T>.readData(resultset: s)
-        return re
-    }
-    public func select<T:SQLCode>(model:T) throws ->T?{
-        let r = FetchRequest(obj: model, key: .all)
-        r.loadKeyMap(map: model.primaryConditionBindMap)
-        let s = try self.fetch(request: r)
-        
-        let re = try FetchRequest<T>.readData(resultset: s).first
-        return re
-    }
-    public func select<T:SQLCode>(type:T.Type,key:FetchKey) throws ->T?{
-        let r = FetchRequest(table: type, key: key)
-        let s = try self.fetch(request: r)
-        
-        let re = try FetchRequest<T>.readData(resultset: s).first
-        return re
-    }
-    public func delete<T:SQLCode>(model:T) throws {
-        try model.doDelete(db: self)
-    }
-    public func insert<T:SQLCode>(model:T) throws{
-        try model.doInsert(db: self)
-    }
-    public func drop<T:SQLCode>(modelType:T.Type) throws{
-        try self.exec(sql: "drop table if exists `\(T.tableName)`")
-    }
-    public func checkpoint(type:WalMode,log:Int32,total:Int32) throws {
-        let l = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
-        let t = UnsafeMutablePointer<Int32>.allocate(capacity: 1)
-        l.pointee = log
-        t.pointee = total
-        let code = sqlite3_wal_checkpoint_v2(self.sqlite, nil, type.rawValue, l, t)
-        l.deallocate()
-        t.deallocate()
-        if SQLITE_OK != code{
-            throw NSError(domain: Self.errormsg(pointer: self.sqlite), code: Int(code), userInfo: nil)
-        }
-    }
-    public func autoCheckpoint(frame:Int32 = 100) throws{
-        let code = sqlite3_wal_autocheckpoint(self.sqlite, frame)
-        if SQLITE_OK != code{
-            throw NSError(domain: Self.errormsg(pointer: self.sqlite), code: Int(code), userInfo: nil)
-        }
-    }
-    public func setJournalMode(_ model:JournalMode) throws {
-        try self.exec(sql: "PRAGMA journal_mode = \(model)")
-    }
-    private func hook(){
-        sqlite3_wal_hook(self.sqlite, { s, sql, c, co in
-            guard let str = c else { return 0 }
-            print("-------------")
-            print("DO WAL :" + String(cString: str))
-            print("-------------")
-            return 0
-        }, Unmanaged.passUnretained(self).toOpaque())
-        
-        sqlite3_commit_hook(self.sqlite, { s in
-            print("-------------")
-            print("DO COMMIT :")
-            print("-------------")
-            return 0
-        }, Unmanaged.passUnretained(self).toOpaque())
-        
-        sqlite3_rollback_hook(self.sqlite, { s in
-            print("-------------")
-            print("DO ROLLBACK")
-            print("-------------")
-        }, Unmanaged.passUnretained(self).toOpaque())
-    }
-    public func synchronous(mode:synchronousMode) throws {
-        try self.exec(sql: "PRAGMA synchronous = " + mode.rawValue)
-    }
-    public func setVersion(version:Int) throws {
-        try self.exec(sql: "PRAGMA user_version=\(version)")
-    }
-    public var version:Int{
-        do{
-            let rs = try self.query(sql: "PRAGMA user_version")
-            defer {
-                rs.close()
-            }
-            try rs.step()
-            let v =  rs.column(index: 0, type: Int.self).value()
-            return v
-        }catch{
-            return 0
-        }
+    public func close(){
+        sqlite3_close(self.sqlite)
     }
 }

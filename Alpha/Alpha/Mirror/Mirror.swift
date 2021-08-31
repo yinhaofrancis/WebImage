@@ -6,14 +6,7 @@
 //
 
 import Foundation
-public struct ForeignKeyAction:Hashable{
-    let action:String
-    static public var CASCADE:ForeignKeyAction = ForeignKeyAction(action: "CASCADE")
-    static public var NO_ACTION:ForeignKeyAction = ForeignKeyAction(action: "NO ACTION")
-    static public var RESTRICT:ForeignKeyAction = ForeignKeyAction(action: "RESTRICT")
-    static public var SET_NULL:ForeignKeyAction = ForeignKeyAction(action: "SET NULL")
-    static public var SET_DEFAULT:ForeignKeyAction = ForeignKeyAction(action: "SET DEFAULT")
-}
+
 
 public protocol OriginValue{
     static var sqlType:String { get }
@@ -619,5 +612,160 @@ extension SQLCode{
                 resultSet.bindNull(name: "@"+i.key)
             }
         }
+    }
+}
+
+extension Database {
+    public func fetch<T:SQLCode>(request:FetchRequest<T>) throws->ResultSet{
+        let rs = try self.query(sql: request.sql)
+        request.doSelectBind(result: rs)
+        return rs
+    }
+
+    public func create<T:SQLCode>(obj:T) throws{
+        if try self.tableExists(name: T.tableName){
+            let column = try self.tableInfo(name: T.tableName)
+            let nowColumn = T().fullKey
+            let addC = nowColumn.filter { i in
+                !column.contains { j in
+                    (i.1.keyName != nil && j.key == i.1.keyName!) || i.0 == j.key
+                }
+            }
+            for i in addC {
+                guard let t = i.1.value else { throw NSError(domain: "alter table value is not use", code: 0, userInfo: nil) }
+                try self.addColumn(name: T.tableName, columeName: i.1.keyName ?? i.0, ov:t , notnull: i.1.nullable, defaultValue: i.1.defaultValue ?? "null")
+            }
+            let removeC = column.filter { j in
+                !nowColumn.contains(where: { i in
+                    (i.1.keyName != nil && j.key == i.1.keyName!) || i.0 == j.key
+                })
+            }
+            if removeC.count > 0{
+                self.foreignKey = false
+                try self.alterTableName(name: T.tableName, newName: "\(T.tableName)_temp");
+                try self.exec(sql: obj.create)
+                let key = obj.fullKey.map({$0.1.keyName ?? $0.0}).joined(separator: ",")
+                let copySql = "INSERT INTO \(T.tableName)  SELECT \(key) FROM \("\(T.tableName)_temp")"
+                try self.exec(sql: copySql)
+                try self.exec(sql: "drop table \(T.tableName)_temp")
+                self.foreignKey = true
+                print(try self.integrityCheck(table: T.tableName))
+                
+            }
+        
+        }else{
+            try self.exec(sql: obj.create)
+        }
+    }
+    public func addColumn<T:OriginValue>(name:String,columeName:String,type:T.Type,notnull :Bool = false ,defaultValue:String = "") throws {
+        let typedef = notnull ? T.sqlType : T.nullType
+        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default `\(defaultValue)`" : "" )"
+        try self.exec(sql: sql)
+    }
+    public func addColumn(name:String,columeName:String, ov:OriginValue ,notnull:Bool = false ,defaultValue:String = "") throws {
+        let typedef = notnull ? ov.sqlType : ov.nullType
+        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default `\(defaultValue)`" : "" )"
+        try self.exec(sql: sql)
+    }
+    public func alterTableName(name:String,newName:String) throws {
+        let sql = "ALTER TABLE \(name) RENAME TO \(newName)"
+        try self.exec(sql: sql)
+    }
+    public func renameColumn(name:String,columeName:String,newName:String) throws {
+        try self.exec(sql: "ALTER TABLE \(name) RENAME COLUMN \(columeName) TO \(newName)")
+    }
+    public func exists<T:SQLCode>(model:T) throws ->Bool{
+        let req = FetchRequest(obj: model,key:.count("*"))
+        req.loadKeyMap(map: model.primaryConditionBindMap)
+        let r = try self.query(sql: req.sql)
+        req.doSelectBind(result: r)
+        try r.step()
+        let c = r.column(index: 0, type: Int32.self).value() > 0
+        r.close()
+        return c
+    }
+    public func save<T:SQLCode>(model:T) throws{
+        if try self.exists(model: model){
+            try self.update(model: model)
+        }else{
+            try self.insert(model: model)
+        }
+    }
+    public func count<T:SQLCode>(model:T.Type) throws ->Int{
+        let req = FetchRequest(table: model, key: .count("*"))
+        let r = try self.query(sql: req.sql)
+        try r.step()
+        let c = r.column(index: 0, type: Int.self).value()
+        r.close()
+        return c
+    }
+    public func update<T:SQLCode>(model:T) throws {
+        try model.doUpdate(db: self)
+    }
+    public func update<T:SQLCode>(model:[String:OriginValue?],table:T.Type,condition:Condition,bind:[String:OriginValue] = [:]) throws {
+        let kv = model.map { i in
+            T.updateSetKeyCode((i.key,i.key,i.value))
+        }.compactMap({$0}).joined(separator: ",")
+        let c = "UPDATE \(T.tableName) SET \(kv) where \(condition.conditionCode)"
+        let rs = try self.query(sql: c)
+        for i in model{
+            
+            if i.value is Data{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
+            }else if i.value is String{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
+            }
+        }
+        for i in bind{
+            if i.value is Data{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
+            }else if i.value is String{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
+            }
+        }
+        try rs.step()
+        rs.close()
+    }
+    public func delete<T:SQLCode>(table:T.Type,condition:Condition,bind:[String:OriginValue]) throws {
+        let c = "DELETE FROM \(T.tableName) where \(condition.conditionCode)"
+        let rs = try self.query(sql: c)
+        for i in bind{
+            if i.value is Data{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! Data)
+            }else if i.value is String{
+                rs.bind(name: "@"+i.key)?.bind(value: i.value as! String)
+            }
+        }
+        try rs.step()
+        rs.close()
+    }
+    public func select<T:SQLCode>(request:FetchRequest<T>) throws ->[T]{
+        let s = try self.fetch(request: request)
+        let re = try FetchRequest<T>.readData(resultset: s)
+        return re
+    }
+    public func select<T:SQLCode>(model:T) throws ->T?{
+        let r = FetchRequest(obj: model, key: .all)
+        r.loadKeyMap(map: model.primaryConditionBindMap)
+        let s = try self.fetch(request: r)
+        
+        let re = try FetchRequest<T>.readData(resultset: s).first
+        return re
+    }
+    public func select<T:SQLCode>(type:T.Type,key:FetchKey) throws ->T?{
+        let r = FetchRequest(table: type, key: key)
+        let s = try self.fetch(request: r)
+        
+        let re = try FetchRequest<T>.readData(resultset: s).first
+        return re
+    }
+    public func delete<T:SQLCode>(model:T) throws {
+        try model.doDelete(db: self)
+    }
+    public func insert<T:SQLCode>(model:T) throws{
+        try model.doInsert(db: self)
+    }
+    public func drop<T:SQLCode>(modelType:T.Type) throws{
+        try self.exec(sql: "drop table if exists `\(T.tableName)`")
     }
 }
