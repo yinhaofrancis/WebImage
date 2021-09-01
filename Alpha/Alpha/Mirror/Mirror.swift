@@ -659,14 +659,13 @@ extension Database {
     }
     public func addColumn<T:OriginValue>(name:String,columeName:String,type:T.Type,notnull :Bool = false ,defaultValue:String = "") throws {
         let typedef = notnull ? T.sqlType : T.nullType
-        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default `\(defaultValue)`" : "" )"
-        try self.exec(sql: sql)
+        try self.addColumn(name: name, columeName: columeName, typedef: typedef,notnull: notnull,defaultValue: defaultValue)
     }
     public func addColumn(name:String,columeName:String, ov:OriginValue ,notnull:Bool = false ,defaultValue:String = "") throws {
         let typedef = notnull ? ov.sqlType : ov.nullType
-        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default `\(defaultValue)`" : "" )"
-        try self.exec(sql: sql)
+        try self.addColumn(name: name, columeName: columeName, typedef: typedef,notnull: notnull,defaultValue: defaultValue)
     }
+    
     public func alterTableName(name:String,newName:String) throws {
         let sql = "ALTER TABLE \(name) RENAME TO \(newName)"
         try self.exec(sql: sql)

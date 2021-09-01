@@ -333,6 +333,10 @@ extension Database{
             return ResultSet(stmt: s, db: self)
         }
     }
+    public func addColumn(name:String,columeName:String, typedef:String ,notnull:Bool = false ,defaultValue:String = "") throws {
+        let sql = "ALTER TABLE \(name) ADD COLUMN \(columeName) \(typedef) \(notnull ? "default `\(defaultValue)`" : "" )"
+        try self.exec(sql: sql)
+    }
     public func addScalarFunction(function:ScalarFunction){
         sqlite3_create_function(self.sqlite!, function.name, function.nArg, SQLITE_UTF8, Unmanaged.passUnretained(function).toOpaque(), { ctx, i, ret in
             let call = Unmanaged<ScalarFunction>.fromOpaque(sqlite3_user_data(ctx)).takeUnretainedValue()
