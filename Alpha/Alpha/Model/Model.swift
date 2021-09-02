@@ -37,6 +37,9 @@ public struct JSON:CustomStringConvertible,
         return "\(self.json)"
     }
     var content:Any?
+    public init(content:Any?){
+        self.content = content
+    }
     public init (_ json:[String:Any]){
         var temp:[String:Any] = [:]
         for i in json {
@@ -367,6 +370,41 @@ extension Database{
             try self.exec(sql: "CREATE TABLE IF NOT EXISTS  `\(name)` (TEXT json,Text time)")
         }
         
+    }
+    public func query(name:String,condition:Condition? = nil,value:[String:String] = [:]) throws ->[JSON]{
+        var result:[JSON] = []
+        let sql = "select * from \(name)" + (condition != nil ? "where " + condition!.conditionCode : "")
+        let rs = try self.query(sql: sql)
+        for i in value {
+            rs.bind(name: i.value)?.bind(value: i.value)
+        }
+        while try rs.step() {
+            var js:Dictionary<String,JSON> = Dictionary()
+            for i in 0 ..< rs.columnCount{
+                let name = rs.columnName(index: i)
+                let value = rs.column(index: Int32(i), type: String.self).value()
+                if let data = value.data(using: .utf8){
+                    do {
+                        let jm = try JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)
+                        if jm is Array<Any>{
+                            js[name] = JSON(jm as! Array<Any>)
+                        }else if jm is Dictionary<String,Any>{
+                            js[name] = JSON(jm as! Dictionary<String,Any>)
+                        }else{
+                            js[name] = JSON(json: jm)
+                        }
+                    } catch {
+                        js[name] = JSON(json: value)
+                    }
+                    
+                }else{
+                    js[name] = JSON(json: value)
+                }
+            }
+            result.append(JSON(content: js))
+        }
+        rs.close()
+        return result
     }
     
     
