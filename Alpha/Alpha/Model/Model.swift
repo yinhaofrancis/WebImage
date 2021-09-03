@@ -11,7 +11,9 @@ import Foundation
 @dynamicMemberLookup
 public struct JSON:CustomStringConvertible,
             ExpressibleByArrayLiteral,
-            ExpressibleByDictionaryLiteral{
+            ExpressibleByDictionaryLiteral,
+            ExpressibleByStringLiteral{
+    public typealias StringLiteralType = String
     
     public typealias ArrayLiteralElement = Any
     
@@ -19,7 +21,11 @@ public struct JSON:CustomStringConvertible,
     
     public typealias Value = Any
     
-
+    var content:Any?
+    
+    public var description: String{
+        return "\(self.json)"
+    }
     
     public init(arrayLiteral elements: Any...) {
         self.init(elements)
@@ -33,10 +39,6 @@ public struct JSON:CustomStringConvertible,
         self.init(temp)
     }
     
-    public var description: String{
-        return "\(self.json)"
-    }
-    var content:Any?
     public init(content:Any?){
         self.content = content
     }
@@ -48,21 +50,18 @@ public struct JSON:CustomStringConvertible,
             }else if let dc = i.value as? Array<Any>{
                 temp[i.key] = JSON(dc)
             }else{
-                temp[i.key] = JSON(json:i.value)
+                temp[i.key] = JSON(content:i.value)
             }
         }
         self.content = temp
     }
-    public init(json:Any?){
-        content = json
-    }
-    public static func json(_ json:Any)->JSON{
+    public init(_ json:Any?){
         if let dc = json as? Dictionary<String,Any>{
-            return JSON(dc)
+            self.init(dc)
         }else if let dc = json as? Array<Any>{
-            return JSON(dc)
+            self.init(dc)
         }else{
-            return JSON(json:json)
+            self.init(content:json)
         }
     }
     public init(_ json:[Any]){
@@ -73,41 +72,78 @@ public struct JSON:CustomStringConvertible,
             }else if let dc = i as? Array<Any>{
                 temp.append(JSON(dc))
             }else{
-                temp.append(JSON(json: i))
+                temp.append(JSON(content: i))
             }
         }
         self.content = temp
     }
-    public init(json:Data){
+    public init(_ json:Data){
         do{
             let j = try JSONSerialization.jsonObject(with: json, options: .allowFragments)
-            self.init(json: j)
+            self.init(j)
         }catch{
             let str = String(data: json, encoding: .utf8)
-            self.init(json: str)
+            self.init(content:str)
         }
     }
-    public init(json:String){
-        let data = json.data(using: .utf8)
-        self.init(json:data)
+    public init(stringLiteral json:String){
+        guard let data = json.data(using: .utf8) else {
+            self.init(content: json)
+            return
+        }
+        self.init(data)
+    }
+    public init(content:String){
+        self.content = content
     }
     public subscript(dynamicMember dynamicMember:String)->JSON{
-        self.keyValue(dynamicMember: dynamicMember) ?? JSON(json: nil)
+        get{
+            self.keyValue(dynamicMember: dynamicMember) ?? JSON(nil)
+        }
+        set{
+            self.setKeyValue(dynamicMember: dynamicMember, json: newValue)
+        }
     }
     public subscript(dynamicMember dynamicMember:String)->String{
-        self.keyValue(dynamicMember: dynamicMember)?.str() ?? ""
+        get{
+            self.keyValue(dynamicMember: dynamicMember)?.str() ?? ""
+        }
+        set{
+            self.setKeyValue(dynamicMember: dynamicMember, json: JSON(content: newValue))
+        }
     }
     public subscript(dynamicMember dynamicMember:String)->Any{
-        self.keyValue(dynamicMember: dynamicMember) ?? JSON(json: nil)
+        get{
+            self.keyValue(dynamicMember: dynamicMember) ?? JSON(nil)
+        }
+        set{
+            self.setKeyValue(dynamicMember: dynamicMember, json: JSON(newValue))
+        }
     }
     public subscript(dynamicMember dynamicMember:String)->Int{
-        self.keyValue(dynamicMember: dynamicMember)?.int() ?? 0
+        get{
+            self.keyValue(dynamicMember: dynamicMember)?.int() ?? 0
+        }
+        set{
+            self.setKeyValue(dynamicMember: dynamicMember, json: JSON(newValue))
+        }
     }
     public subscript(dynamicMember dynamicMember:String)->Double{
-        self.keyValue(dynamicMember: dynamicMember)?.double() ?? 0
+        get{
+            self.keyValue(dynamicMember: dynamicMember)?.double() ?? 0
+        }
+        set{
+            self.setKeyValue(dynamicMember: dynamicMember, json: JSON(newValue))
+        }
+        
     }
     public subscript(dynamicMember dynamicMember:String)->Bool{
-        self.keyValue(dynamicMember: dynamicMember)?.bool() ?? false
+        get{
+            self.keyValue(dynamicMember: dynamicMember)?.bool() ?? false
+        }
+        set{
+            self.setKeyValue(dynamicMember: dynamicMember, json: JSON(newValue))
+        }
     }
     public subscript(_ index:Int)->JSON{
         if let dic = self.content as? Array<JSON>{
@@ -115,7 +151,7 @@ public struct JSON:CustomStringConvertible,
                 return dic[index]
             }
         }
-        return JSON(json: nil)
+        return JSON(nil)
     }
     public func str()->String{
         if let str = self.content as? String{
@@ -157,6 +193,11 @@ public struct JSON:CustomStringConvertible,
             return dic[dynamicMember]
         }
         return nil
+    }
+    public mutating func setKeyValue(dynamicMember:String,json:JSON?){
+        var dic = self.content as? Dictionary<String,JSON>
+        dic?[dynamicMember] = json
+        self.content = dic
     }
     public func int()->Int{
         if let str = self.content as? String{
@@ -347,7 +388,6 @@ extension Database{
     }
     
     public func insert(_ name: String, _ json: JSON) throws {
-
         if let dic = json.content as? Dictionary<String,JSON>{
             try insert(dic, name)
         }else if let dic = json.content as? Array<Dictionary<String,JSON>>{
@@ -358,22 +398,50 @@ extension Database{
             throw NSError(domain: "JSON is not object", code: 0, userInfo: nil)
         }
     }
-    
-    
-    public func save(name:String,json:JSON) throws{
-        do {
-            try insert(name, json)
-        } catch  {
-            try self.create(name: name, json: json)
+    func update(_ name:String,_ rowid:Int,_ json: [String : JSON]) throws {
+        let set:[String] = json.reduce(into: []) { r, c in
+            if c.key != "rowid"{
+                r.append("\(c.key)=@\(c.key)")
+            }
         }
-        if try !self.tableExists(name: name){
-            try self.exec(sql: "CREATE TABLE IF NOT EXISTS  `\(name)` (TEXT json,Text time)")
+        let sql = "update \(name) set \(set.joined(separator: ",")) where `rowid`=@rowid"
+        let rs = try self.query(sql: sql)
+        for i in json {
+            if (i.key != "rowid"){
+                
+                rs.bind(name: "@"+i.key)?.bind(value: i.value.jsonString)
+            }else{
+                print(i.key,i.value.int())
+                rs.bind(name: "@"+i.key)?.bind(value: i.value.int())
+            }
         }
-        
+        try rs.step()
+        rs.close()
     }
+    public func update(_ name:String,_ rowid:Int,_ json: JSON) throws {
+        if let dic = json.content as? Dictionary<String,JSON>{
+            try self.update(name,rowid, dic)
+            return
+        }
+        if let dic = json.content as? Array<Dictionary<String,JSON>>{
+            for i in dic {
+                try self.update(name, rowid, i)
+            }
+            return
+        }
+        throw NSError(domain: "update json", code: 0, userInfo: nil)
+    }
+    public func save(_ name:String,_ json: JSON) throws {
+        if json.rowid == 0{
+            try self.insert(name, json)
+        }else{
+            try self.update(name, json.rowid, json)
+        }
+    }
+
     public func query(name:String,condition:Condition? = nil,value:[String:String] = [:]) throws ->[JSON]{
         var result:[JSON] = []
-        let sql = "select * from \(name)" + (condition != nil ? "where " + condition!.conditionCode : "")
+        let sql = "select *,ROWID from \(name)" + (condition != nil ? " where " + condition!.conditionCode : "")
         let rs = try self.query(sql: sql)
         for i in value {
             rs.bind(name: i.value)?.bind(value: i.value)
@@ -391,14 +459,14 @@ extension Database{
                         }else if jm is Dictionary<String,Any>{
                             js[name] = JSON(jm as! Dictionary<String,Any>)
                         }else{
-                            js[name] = JSON(json: jm)
+                            js[name] = JSON(content: value)
                         }
                     } catch {
-                        js[name] = JSON(json: value)
+                        js[name] = JSON(content: value)
                     }
                     
                 }else{
-                    js[name] = JSON(json: value)
+                    js[name] = JSON(content: value)
                 }
             }
             result.append(JSON(content: js))

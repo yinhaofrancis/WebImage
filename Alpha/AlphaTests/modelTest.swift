@@ -15,7 +15,6 @@ class modelTest: XCTestCase {
     override func setUpWithError() throws {
 //        self.db = try self.data(name: "data")
         self.pool = try self.datapool(name: "datapool")
-//        try self.pool.loadMode(mode: .ACP)
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
     var pool:DataBasePool!
@@ -25,69 +24,33 @@ class modelTest: XCTestCase {
 
     func testExample() throws {
         
-//        var jj = """
-//            {
-//                "a":"ddd",
-//                "b":131,
-//                "c":{
-//                    "q":"12",
-//                    "f":13
-//                },
-//                "d":[{
-//                    "q":"123",
-//                    "f":133
-//                },{
-//                    "q":"123",
-//                    "f":1337
-//                }]
-//            }
-//            """
-//        let json = try! JSONSerialization.jsonObject(with: jj.data(using: .utf8)!, options: .fragmentsAllowed)
-//        let djson:JSON = JSON.json(json)
-//        print(djson.d[1].f)
-//        let testjson:JSON = [
-//            "1":1,
-//            "2":"sdsd",
-//            "3":3.0,
-//            "dddd":[
-//                "d":0,
-//                "8":7
-//            ],
-//            "cc":
-//                [
-//                    ["d":1,"8":7],
-//                    ["d":3,"8":7],
-//                    ["d":5,"8":7]
-//                ]
-//]
-//        print(testjson.15)
-//        print(testjson.cc[2].d)
-//        print(testjson.json)
-//        print(testjson.dddd.8)
-//        let a:Int = testjson.dddd.8
-//        let b:Int = testjson.cc[2].d
-//        print(a)
-//        print(b)
-//        print(testjson)
-
-        let j:JSON = ["sdada":"dasdasd","dd":1,"dsdsd":["dd","d"],"sad":"dasdasd","k":["a":1]]
-//        print(j)
+        
         
         self.pool.write { db in
-            try db.insert("a", j)
+            for i in 0 ..< 10{
+                let j:JSON = ["sdada":"dasdasd","cc":3.0,"dd":arc4random() % 100,"dsdsd":["dd","d"],"sad":"dasdasd","k":["a":1]]
+                try db.insert("a", j)
+            }
+
         }
         self.pool.writeSync { b in
-            let j = try b.query(name: "a")
+            var j = try b.query(name: "a")
             for i in j{
-                print(i.dd)
-                print(i.k.a)
-                print(i.dsdsd[1])
+                XCTAssert(i.sdada == "dasdasd")
+//                XCTAssert(i.dd == 1)
+                XCTAssert(i.dsdsd[1].str() == "d")
+                XCTAssert(i.dsdsd[0].str() == "dd")
+                XCTAssert(i.sad == "dasdasd")
+                XCTAssert(i.k.a == 1)
+            }
+            for i in 0 ..< j.count{
+                var t = j[i]
+                t.dd = i
+                print(t.jsonString)
+                try b.save("a", t)
+                
             }
         }
-//        print(l.dddd.d)
-//        print(l.cc[0].8)
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
 
     func json(j:JSON){
