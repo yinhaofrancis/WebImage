@@ -46,16 +46,12 @@ class modelTest: XCTestCase {
             for i in 0 ..< j.count{
                 var t = j[i]
                 t.dd = i
-                print(t.jsonString)
                 try b.save("a", t)
-                
             }
+            j = try b.query(name: "a")
         }
     }
 
-    func json(j:JSON){
-        print(j)
-    }
     func testPerformanceExample() throws {
         // This is an example of a performance test case.
         self.measure {
