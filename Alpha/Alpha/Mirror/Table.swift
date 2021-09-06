@@ -4,7 +4,7 @@
 //
 //  Created by hao yin on 2021/7/23.
 //
-#if Mirror
+
 import Foundation
 import SQLite3
 
@@ -281,4 +281,4 @@ public class Model:NSObject,SQLCode{
         
     }
 }
-#endif
+

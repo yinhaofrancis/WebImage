@@ -1,16 +1,22 @@
 PODS:
-  - Alpha (0.1.0)
+  - Alpha (0.1.0):
+    - Alpha/Alpha (= 0.1.0)
+  - Alpha/Alpha (0.1.0)
+  - Alpha/Mirror (0.1.0)
+  - Alpha/Model (0.1.0)
 
 DEPENDENCIES:
   - Alpha (from `../Alpha`)
+  - Alpha/Mirror (from `../Alpha`)
+  - Alpha/Model (from `../Alpha`)
 
 EXTERNAL SOURCES:
   Alpha:
     :path: "../Alpha"
 
 SPEC CHECKSUMS:
-  Alpha: 129fac7c192f21b4ee18ed2d8e1c222d45f09143
+  Alpha: 4fcb4fa4154cec72fc50701b5ab535eb6fef6a83
 
-PODFILE CHECKSUM: ef55940366b17745065ebee9b5f17147cd461792
+PODFILE CHECKSUM: 080da3d7b0de93856d55586b3065b1c27f83ea26
 
 COCOAPODS: 1.10.1

@@ -4,7 +4,7 @@
 //
 //  Created by hao yin on 2021/7/26.
 //
-#if Mirror
+
 import Foundation
 import SQLite3
 public enum Order {
@@ -214,4 +214,4 @@ public class FetchRequest<T:SQLCode>{
         return sql
     }
 }
-#endif
+

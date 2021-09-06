@@ -29,10 +29,17 @@ sqlite3 database json model
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
   s.ios.deployment_target = '10.0'
-
-  s.source_files = 'Alpha/**/*'
-
+  s.default_subspec = 'Alpha'
+  s.subspec 'Alpha' do |c|
+      c.source_files = 'Alpha/*.swift'
+  end
+  s.subspec 'Model' do |c|
+      c.source_files = 'Alpha/Model/*.swift'
+  end
+  s.subspec 'Mirror' do |c|
+      c.source_files = 'Alpha/Mirror/*.swift'
+  end
   # s.public_header_files = 'Pod/Classes/**/*.h'
-  s.frameworks = 'UIKit', 'Sqlite3'
+  # s.frameworks = 'UIKit', 'SQLite3'
   # s.dependency 'AFNetworking', '~> 2.3'
 end
