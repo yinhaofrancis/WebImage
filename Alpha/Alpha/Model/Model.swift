@@ -474,7 +474,10 @@ extension Database{
         rs.close()
         return result
     }
-    
+    public func delete(name:String,rowid:Int) throws {
+        let sql = "delete from \(name) where `rowid`=\(rowid)"
+        try self.exec(sql: sql)
+    }
     
     public func create(name:String,json:JSON) throws{
         if let dic = json.json as? Dictionary<String,Any>{
