@@ -4,7 +4,4 @@
 target 'Epsilon' do
   # Comment the next line if you don't want to use dynamic frameworks
   use_frameworks!
-  pod "Alpha", :path => '../Alpha'
-  pod "Alpha/Model", :path => '../Alpha'
-  pod "Alpha/Mirror", :path => '../Alpha'
 end

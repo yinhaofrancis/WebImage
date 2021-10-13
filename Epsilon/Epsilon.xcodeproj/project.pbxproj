@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0AD61406674350869B4C526A /* Pods_Epsilon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2894E82E395C8D3156D1671D /* Pods_Epsilon.framework */; };
+		A9660CB426E5EC3700CB98B6 /* EpsilonGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9660CB326E5EC3700CB98B6 /* EpsilonGesture.swift */; };
 		A9A11D6226DE227A000D3F6C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A11D6126DE227A000D3F6C /* AppDelegate.swift */; };
 		A9A11D6426DE227A000D3F6C /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A11D6326DE227A000D3F6C /* SceneDelegate.swift */; };
 		A9A11D6626DE227A000D3F6C /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9A11D6526DE227A000D3F6C /* ViewController.swift */; };
@@ -20,6 +21,7 @@
 		2894E82E395C8D3156D1671D /* Pods_Epsilon.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Epsilon.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		43081DF9554D95671022587C /* Pods-Epsilon.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Epsilon.debug.xcconfig"; path = "Target Support Files/Pods-Epsilon/Pods-Epsilon.debug.xcconfig"; sourceTree = "<group>"; };
 		517277977ADFBD5E5485423A /* Pods-Epsilon.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Epsilon.release.xcconfig"; path = "Target Support Files/Pods-Epsilon/Pods-Epsilon.release.xcconfig"; sourceTree = "<group>"; };
+		A9660CB326E5EC3700CB98B6 /* EpsilonGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpsilonGesture.swift; sourceTree = "<group>"; };
 		A9A11D5E26DE227A000D3F6C /* Epsilon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Epsilon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A9A11D6126DE227A000D3F6C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A9A11D6326DE227A000D3F6C /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -48,7 +50,6 @@
 				43081DF9554D95671022587C /* Pods-Epsilon.debug.xcconfig */,
 				517277977ADFBD5E5485423A /* Pods-Epsilon.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -88,6 +89,7 @@
 				A9A11D6A26DE228B000D3F6C /* Assets.xcassets */,
 				A9A11D6C26DE228B000D3F6C /* LaunchScreen.storyboard */,
 				A9A11D6F26DE228B000D3F6C /* Info.plist */,
+				A9660CB326E5EC3700CB98B6 /* EpsilonGesture.swift */,
 			);
 			path = Epsilon;
 			sourceTree = "<group>";
@@ -103,7 +105,6 @@
 				A9A11D5A26DE227A000D3F6C /* Sources */,
 				A9A11D5B26DE227A000D3F6C /* Frameworks */,
 				A9A11D5C26DE227A000D3F6C /* Resources */,
-				9454F96F08235050C9703F37 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -160,23 +161,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		9454F96F08235050C9703F37 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Epsilon/Pods-Epsilon-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-Epsilon/Pods-Epsilon-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Epsilon/Pods-Epsilon-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		E31DC5FC005393DF98D3E3B0 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -206,6 +190,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A9660CB426E5EC3700CB98B6 /* EpsilonGesture.swift in Sources */,
 				A9A11D6626DE227A000D3F6C /* ViewController.swift in Sources */,
 				A9A11D6226DE227A000D3F6C /* AppDelegate.swift in Sources */,
 				A9A11D6426DE227A000D3F6C /* SceneDelegate.swift in Sources */,

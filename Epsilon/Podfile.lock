@@ -1,22 +1,3 @@
-PODS:
-  - Alpha (0.1.0):
-    - Alpha/Alpha (= 0.1.0)
-  - Alpha/Alpha (0.1.0)
-  - Alpha/Mirror (0.1.0)
-  - Alpha/Model (0.1.0)
-
-DEPENDENCIES:
-  - Alpha (from `../Alpha`)
-  - Alpha/Mirror (from `../Alpha`)
-  - Alpha/Model (from `../Alpha`)
-
-EXTERNAL SOURCES:
-  Alpha:
-    :path: "../Alpha"
-
-SPEC CHECKSUMS:
-  Alpha: 4fcb4fa4154cec72fc50701b5ab535eb6fef6a83
-
-PODFILE CHECKSUM: 080da3d7b0de93856d55586b3065b1c27f83ea26
+PODFILE CHECKSUM: 5fb1c74911c0a645f78117e0a8cc24d036e5324e
 
 COCOAPODS: 1.10.1
